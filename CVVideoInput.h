@@ -3,21 +3,20 @@
 
 #include <iostream> // for standard I/O
 #include <string>   // for strings
-#include "CameraInput.h"
+#include "ImageInput.h"
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-class CVVideoInput: public CameraInput {
+class CVVideoInput: public ImageInput {
     public:
-        CVVideoInput(std::string filename);
+        CVVideoInput(std::string filename, int startFrame = 0);
         ~CVVideoInput();
-        bool hasNextFrame();
-        void getCurrentFrame(cv::Mat &frame);
+        bool getNextImageFrame(cv::Mat &frame);
         int getCurrentFrameCount();
     private:
         cv::VideoCapture inputVideo;
-        cv::Mat currentFrame;
+        int totalFrameCount;
         int frameCount;
         bool hasFrame;
 };

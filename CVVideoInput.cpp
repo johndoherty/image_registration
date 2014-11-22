@@ -3,32 +3,27 @@
 using namespace std;
 using namespace cv;
 
-CVVideoInput::CVVideoInput(std::string filename) {
+CVVideoInput::CVVideoInput(std::string filename, int startFrame) {
 	inputVideo = VideoCapture(filename);
-	currentFrame = Mat();
 	frameCount = 0;
     if (!inputVideo.isOpened()) {
 		cout << "Could not open the input video: " << filename << endl;
 	}
-    inputVideo >> currentFrame;
-    hasFrame = !currentFrame.empty();
-	cout << filename << endl;
-}
-
-void CVVideoInput::getCurrentFrame(Mat &output) {
-	currentFrame.copyTo(output);
-	inputVideo >> currentFrame;
-	if (currentFrame.empty()) {
-		hasFrame = false;
-	} else {
-		hasFrame = true;
-		resize(currentFrame, currentFrame, Size(0, 0), .5, .5);
-		frameCount++;
+	totalFrameCount = inputVideo.get(CV_CAP_PROP_FRAME_COUNT);
+	Mat test = Mat();
+	for (int i = 0; i < startFrame; i++) {
+		getNextImageFrame(test);
 	}
 }
 
-bool CVVideoInput::hasNextFrame() {
-	return hasFrame;
+bool CVVideoInput::getNextImageFrame(Mat &output) {
+	inputVideo >> output;
+	if (!output.empty()) {
+		resize(output, output, Size(0, 0), .5, .5);
+		frameCount++;
+		return true;
+	}
+	return false;
 }
 
 int CVVideoInput::getCurrentFrameCount() {
@@ -36,7 +31,6 @@ int CVVideoInput::getCurrentFrameCount() {
 }
 
 CVVideoInput::~CVVideoInput() {
-	currentFrame.release();
 	inputVideo.release();
 }
 

@@ -13,16 +13,18 @@ endif()
 find_package(OpenCV COMPONENTS core highgui video imgproc contrib REQUIRED)
 find_package(Boost 1.40 COMPONENTS program_options filesystem system REQUIRED )
 find_package(OpenNI REQUIRED)
+find_package(PCL REQUIRED)
 
 if (MSVC)
     add_definitions("-DBOOST_ALL_NO_LIB -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -DBOOST_ALL_DYN_LINK")
 endif()
 
-include_directories(${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${OPENNI_INCLUDES} ${OPENNI2_INCLUDES} ${OPENNI_INCLUDE_DIRS})
-link_directories(${Boost_LIBRARY_DIRS})
+include_directories(${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${OPENNI_INCLUDES} ${OPENNI2_INCLUDES} ${OPENNI_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS} ${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
 
 add_executable (image_registration main.cpp CVVideoInput.cpp ONIVideoInput.cpp)
-target_link_libraries(image_registration ${OpenCV_LIBS} ${Boost_LIBRARIES} ${OPENNI_LIBRARIES})
+target_link_libraries(image_registration ${OpenCV_LIBS} ${Boost_LIBRARIES} ${OPENNI_LIBRARIES} ${PCL_LIBRARIES})
 
 IF(CMAKE_COMPILER_IS_GNUCC)
     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fmessage-length=0")
