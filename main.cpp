@@ -13,18 +13,9 @@
 using namespace std;
 using namespace cv;
 
-#define FRAME_BY_FRAME false
 #define FAST_THRESHOLD 40
 
 
-void alignDepthVectors(vector<Point3f> &trainKeypoints, vector<KeyPoint> &queryKeypoints, vector<DMatch> &matches, vector<Point3f> &alignedTrainKeypoints, vector<Point2f> &alignedQueryKeypoints) {
-	alignedTrainKeypoints.clear();
-	alignedQueryKeypoints.clear();
-	for (int i = 0; i < matches.size(); i++) {
-		alignedTrainKeypoints.push_back(trainKeypoints[matches[i].trainIdx]);
-		alignedQueryKeypoints.push_back(queryKeypoints[matches[i].queryIdx].pt);
-	}
-}
 
 void projectDepthMap(vector<Point3f> &depthKeypoints, vector<KeyPoint> &imageKeypoints, Mat &T, Mat &R, Mat &projectedDepthImage) {
 	// Compute center from T and R (-Rt?)
@@ -93,29 +84,12 @@ int main() {
 	while (validDeviceImage && validExternalImage && validDepthImage) {
 		cvtColor(deviceImage, deviceImageBw, CV_RGB2GRAY);
 		extractKeyPoints(deviceImageBw, deviceKeyPoints);
-		keyPointMatches(externalImageBw, externalKeyPoints, deviceImageBw, deviceKeyPoints, matches);
 		//keyPointMatches(externalImageFrameBw, externalKeyPoints, externalImageFrameBw, externalKeyPoints, matches);
-		alignDepthVectors(objectKeyPoints, deviceKeyPoints, matches, matchedObjectPoints, matchedDevicePoints);
 		//alignDepthVectors(objectKeyPoints, externalKeyPoints, matches, matchedObjectPoints, matchedDevicePoints);
 		solvePnPRansac(matchedObjectPoints, matchedDevicePoints, K, Mat(), R, T);
 		Rodrigues(R, Rmat);
 
 
-		makeViewableDepthImage(externalRangeImage, viewableDepthOutput);
-		imshow("Device Video", augmentedDeviceImage);
-		imshow("External Video", externalImage);
-		imshow("Matches", imgMatches);
-		imshow("Depth image", viewableDepthOutput);
-		imshow("Translation", transImg);
-
-		validDeviceImage = deviceVideo.getNextImageFrame(deviceImage);
-		validExternalImage = externalVideo.getNextImageFrame(externalImage);
-		validDepthImage = externalVideo.getNextDepthFrame(externalRangeImage);
-		if (FRAME_BY_FRAME) {
-			waitKey(0);
-		} else {
-			waitKey(1);
-		}
 	}
 
 	/*

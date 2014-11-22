@@ -13,7 +13,8 @@
 class DepthInput {
 public:
 	virtual bool getNextDepthFrame(cv::Mat &frame) = 0;
-	//static void getDepthImageAsPointCloud(cv::Mat &depthImage, pcl::PointCloud &pointCloud);
+	virtual cv::Point2f getFocalLength() const = 0;
+	virtual cv::Point2f getCenterOfProjection() const = 0;
 };
 
 

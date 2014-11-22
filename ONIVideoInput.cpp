@@ -104,4 +104,14 @@ int ONIVideoInput::getCurrentFrameCount() {
 	return currentFrameCount;
 }
 
+Point2f ONIVideoInput::getFocalLength() const{
+	// TODO: finish this
+	return Point2f(0, 0);
+}
+
+Point2f ONIVideoInput::getCenterOfProjection() const{
+	// TODO
+	return Point2f(0, 0);
+}
+
 

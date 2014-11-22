@@ -16,6 +16,7 @@ public:
 private:
 	Device *device;
 	External *external;
+	void keyPointMatches(cv::Mat &trainImage, std::vector<cv::KeyPoint> &trainKeypoints, cv::Mat &queryImage, std::vector<cv::KeyPoint> &queryKeypoints, std::vector<cv::DMatch> &matches);
 };
 
 

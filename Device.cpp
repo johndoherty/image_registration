@@ -10,15 +10,15 @@
 using namespace std;
 using namespace cv;
 
-Device::Device(ImageInput &imageInput, FeatureDetector &detector) {
-	inputVideo = imageInput;
+Device::Device(ImageInput &image, FeatureDetector &detector) {
+	imageInput = image;
 	featureDetector = detector;
-	inputVideo->getNextImageFrame(currentImage);
+	imageInput->getNextImageFrame(currentImage);
 }
 
 bool Device::advanceFrame() {
 	Mat nextFrame;
-	bool valid = inputVideo->getNextImageFrame(nextFrame);
+	bool valid = imageInput->getNextImageFrame(nextFrame);
 	if (valid) {
 		nextFrame.copyTo(currentImage);
 		cvtColor(currentImage, currentBwImage, CV_RGB2GRAY);
@@ -31,5 +31,5 @@ void Device::getCurrentImage(Mat &image) {
 }
 
 void Device::getCurrentKeyPoints(vector<KeyPoint> &keyPoints) {
-	featureDetector->detect(currentImage, keyPoints);
+	featureDetector->detect(currentBwImage, keyPoints);
 }

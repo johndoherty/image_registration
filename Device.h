@@ -17,11 +17,13 @@ public:
 	void getCurrentImage(cv::Mat &image);
 	void getCurrentBwImage(cv::Mat &bwImage);
 	void getCurrentKeyPoints(std::vector<cv::KeyPoint> &keyPoints);
+	void getCameraMatrix(cv::Mat &cameraMatrix); // TODO: use matx
 private:
-	ImageInput* inputVideo;
+	ImageInput* imageInput;
 	cv::FeatureDetector* featureDetector;
 	cv::Mat currentImage;
 	cv::Mat currentBwImage;
+	cv::Mat cameraMatrix;
 };
 
 

@@ -5,18 +5,51 @@
  *      Author: john
  */
 
+#include "Tracker.h"
 
-Tracker::Tracker() {
+using namespace std;
+using namespace cv;
 
+Tracker::Tracker(Device &d, External &e) {
+	device = d;
+	external = e;
 }
 
+bool Tracker::advanceFrame() {
+	bool validDevice = device->advanceFrame();
+	bool validExternal = external->advanceFrame();
+	return validDevice && validExternal;
+}
 
-void keyPointMatches(Mat &trainImage, vector<KeyPoint> &trainKeypoints, Mat &queryImage, vector<KeyPoint> &queryKeypoints, vector<DMatch> &matches) {
+void Tracker::computePosePnP(cv::Mat &R, cv::Mat &t) {
+	Mat externalBwImage, deviceBwImage, deviceCamera;
+	vector<KeyPoint> deviceKeyPoints, externalKeyPoints;
+	device->getCameraMatrix(deviceCamera);
+	device->getCurrentBwImage(deviceBwImage);
+	external->getCurrentBwImage(externalBwImage);
+	device->getCurrentKeyPoints(deviceKeyPoints);
+	external->getCurrentKeyPoints(externalKeyPoints);
+	vector<DMatch> matches;
+	keyPointMatches(externalBwImage, externalKeyPoints, deviceBwImage, deviceKeyPoints, matches);
+
+	vector<Point2f> devicePoints;
+	vector<Point3f> alignedWorldPoints, worldPoints;
+	external->getCurrentKeyWorldPoints(worldPoints);
+
+	for (int i = 0; i < matches.size(); i++) {
+		devicePoints.push_back(deviceKeyPoints[matches[i].queryIdx].pt);
+		alignedWorldPoints.push_back(worldPoints[matches[i].trainIdx]);
+	}
+
+	solvePnPRansac(alignedWorldPoints, devicePoints, deviceCamera, Mat(), R, t);
+}
+
+void Tracker::keyPointMatches(Mat &externalImage, vector<KeyPoint> &externalKeyPoints, Mat &deviceImage, vector<KeyPoint> &deviceKeyPoints, vector<DMatch> &matches) {
 	//SurfDescriptorExtractor extractor;
 	SiftDescriptorExtractor extractor;
 	Mat trainDescriptors, queryDescriptors;
-	extractor.compute(trainImage, trainKeypoints, trainDescriptors);
-	extractor.compute(queryImage, queryKeypoints, queryDescriptors);
+	extractor.compute(externalImage, externalKeyPoints, trainDescriptors);
+	extractor.compute(deviceImage, deviceKeyPoints, queryDescriptors);
 
 	BFMatcher matcher;
 	//FlannBasedMatcher matcher;
