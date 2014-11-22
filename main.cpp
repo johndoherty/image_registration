@@ -14,72 +14,8 @@ using namespace std;
 using namespace cv;
 
 #define FRAME_BY_FRAME false
+#define FAST_THRESHOLD 40
 
-void extractKeyPoints(Mat &input, vector<KeyPoint> &keypoints) {
-	FAST(input, keypoints, 40);
-}
-
-void augmentImage(Mat &input, Mat &output, vector<KeyPoint>& keypoints, std::string text = "") {
-	//drawKeypoints(input, keypoints, output);
-	input.copyTo(output);
-	putText(output, text, Point(10, output.rows - 10), FONT_HERSHEY_SIMPLEX, 1, Scalar(255,255,255));
-	for (int i = 0; i < keypoints.size(); i++) {
-		circle(output, keypoints[i].pt, 5, Scalar(255, 0, 0), 1);
-	}
-}
-
-void makeViewableDepthImage(Mat &input, Mat &output) {
-	const float scaleFactor = 0.05f;
-	input.convertTo(output, CV_8UC1, scaleFactor);
-}
-
-void keyPointMatches(Mat &trainImage, vector<KeyPoint> &trainKeypoints, Mat &queryImage, vector<KeyPoint> &queryKeypoints, vector<DMatch> &matches) {
-	//SurfDescriptorExtractor extractor;
-	SiftDescriptorExtractor extractor;
-	Mat trainDescriptors, queryDescriptors;
-	extractor.compute(trainImage, trainKeypoints, trainDescriptors);
-	extractor.compute(queryImage, queryKeypoints, queryDescriptors);
-
-	BFMatcher matcher;
-	//FlannBasedMatcher matcher;
-	vector<DMatch> initialMatches;
-	matches.clear();
-	//matcher.knnMatch(descriptors1, descriptors2, initialMatches, 2);
-	matcher.match(queryDescriptors, trainDescriptors, matches);
-
-	return;
-
-	double max_dist = 0; double min_dist = 100;
-
-	//-- Quick calculation of max and min distances between keypoints
-	for(int i = 0; i < trainDescriptors.rows; i++) {
-		double dist = initialMatches[i].distance;
-		if (dist < min_dist) min_dist = dist;
-		if (dist > max_dist) max_dist = dist;
-	}
-
-	//-- Draw only "good" matches (i.e. whose distance is less than 2*min_dist,
-	//-- or a small arbitary value ( 0.02 ) in the event that min_dist is very
-	//-- small)
-	//-- PS.- radiusMatch can also be used here.
-
-	matches.clear();
-	for(int i = 0; i < trainDescriptors.rows; i++) {
-		if(initialMatches[i].distance <= max(1.5*min_dist, 0.02)) {
-			matches.push_back(initialMatches[i]);
-		}
-	}
-}
-
-void findDepthKeyPoints(vector<KeyPoint> &depthKeypoints, Mat &depth, vector<Point3f> &objectPoints) {
-	objectPoints.clear();
-	for (int i = 0; i < depthKeypoints.size(); i++) {
-		int x = (int)depthKeypoints[i].pt.x;
-		int y = (int)depthKeypoints[i].pt.y;
-		Point3f newPoint = Point3f(depthKeypoints[i].pt.x, depthKeypoints[i].pt.y, depth.at<float>(y, x));
-		objectPoints.push_back(newPoint);
-	}
-}
 
 void alignDepthVectors(vector<Point3f> &trainKeypoints, vector<KeyPoint> &queryKeypoints, vector<DMatch> &matches, vector<Point3f> &alignedTrainKeypoints, vector<Point2f> &alignedQueryKeypoints) {
 	alignedTrainKeypoints.clear();
@@ -103,6 +39,21 @@ int main() {
 	ONIVideoInput externalVideo = ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 400);
 	cout << "Camera inputs initialized" << endl;
 
+	FastFeatureDetector f = FastFeatureDetector(FAST_THRESHOLD);
+	Device d(deviceVideo, f);
+	External e(externalVideo);
+	Tracker t(d, e);
+	Viewer v(t);
+
+	while (t.advanceFrame()) {
+		v.updateDisplay();
+	}
+
+
+
+
+
+
 	Mat deviceImage, deviceImageBw, externalImage, externalImageBw, externalRangeImage;
 	Mat augmentedDeviceImage, augmentedExternalImage, viewableDepthOutput;
 	Mat imgMatches;
@@ -120,12 +71,17 @@ int main() {
 	vector<Point3f> matchedObjectPoints;
 	vector<DMatch> matches;
 
+	pcl::RangeImagePlanar rangeImage;
+
 	cout << "Getting initial frame from external camera..." << endl;
 	externalVideo.getFirstImageFrame(externalImage);
 	externalVideo.getFirstDepthFrame(externalRangeImage);
+
+	makeRangeImagePlanar(rangeImage, externalRangeImage, externalVideo);
+
 	cvtColor(externalImage, externalImageBw, CV_RGB2GRAY);
 	extractKeyPoints(externalImageBw,  externalKeyPoints);
-	findDepthKeyPoints(externalKeyPoints, externalRangeImage, objectKeyPoints);
+	findDepthKeyPoints(externalKeyPoints, externalRangeImage, objectKeyPoints, rangeImage);
 	augmentImage(externalImage, augmentedExternalImage, externalKeyPoints);
 	imshow("External Key Points", augmentedExternalImage);
 	cout << "Frame received" << endl;
@@ -143,20 +99,7 @@ int main() {
 		//alignDepthVectors(objectKeyPoints, externalKeyPoints, matches, matchedObjectPoints, matchedDevicePoints);
 		solvePnPRansac(matchedObjectPoints, matchedDevicePoints, K, Mat(), R, T);
 		Rodrigues(R, Rmat);
-		cout << "R: " << Rmat << endl;
-		cout << "T: " << T << endl;
 
-		transImg = Scalar(0);
-		circle(transImg, Point(300, 300), 5, Scalar(255), 2);
-		circle(transImg, Point(((T.at<float>(0)/5) + 300), (T.at<float>(1)/5) + 300), 5, Scalar(255), 2);
-
-		augmentImage(deviceImage, augmentedDeviceImage, deviceKeyPoints);
-		drawMatches(deviceImageBw, deviceKeyPoints, externalImageBw, externalKeyPoints,
-				matches, imgMatches, Scalar::all(-1), Scalar::all(-1),
-				vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-		/*drawMatches(externalImageFrameBw, externalKeyPoints, externalImageFrameBw, externalKeyPoints,
-						matches, imgMatches, Scalar::all(-1), Scalar::all(-1),
-						vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );*/
 
 		makeViewableDepthImage(externalRangeImage, viewableDepthOutput);
 		imshow("Device Video", augmentedDeviceImage);

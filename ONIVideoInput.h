@@ -20,6 +20,9 @@ class ONIVideoInput: public ImageInput, public DepthInput {
         void getFirstDepthFrame(cv::Mat &firstFrame);
         bool getNextImageFrame(cv::Mat &frame);
         bool getNextDepthFrame(cv::Mat &frame);
+
+        cv::Point2f getCenterOfProjection() const;
+        cv::Point2f getFocalLength() const;
     private:
         cv::Mat firstImageFrame;
         cv::Mat firstDepthFrame;
