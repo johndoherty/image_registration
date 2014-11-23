@@ -11,8 +11,6 @@
 #include "CVVideoInput.h"
 #include "ONIVideoInput.h"
 #include "Tracker.h"
-#include "Device.h"
-#include "External.h"
 #include "Viewer.h"
 
 using namespace std;

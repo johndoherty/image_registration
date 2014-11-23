@@ -9,8 +9,7 @@
 #define TRACKER_H_
 
 #include "opencv2/calib3d/calib3d.hpp"
-#include "Device.h"
-#include "External.h"
+#include "opencv2/highgui/highgui.hpp"
 
 class Tracker {
 public:
