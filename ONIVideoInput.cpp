@@ -38,6 +38,9 @@ ONIVideoInput::ONIVideoInput(std::string filename, int startFrame) {
 		throw "Could not read DepthGenerator info. Probably, the input file is corrupted";
 
 	XnProductionNodeDescription description = nin.GetDescription();
+	XnFieldOfView fov;
+	depthGen.GetFieldOfView(fov);
+	cout << "Field of view: " << fov.fHFOV << ", "<< fov.fVFOV << endl;
 
 	THROW_IF_FAILED(context.StartGeneratingAll());
 

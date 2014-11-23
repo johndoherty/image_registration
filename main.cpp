@@ -7,90 +7,51 @@
 #include "opencv2/nonfree/features2d.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 #include "pcl/range_image/range_image_planar.h"
+#include "pcl/visualization/cloud_viewer.h"
 #include "CVVideoInput.h"
 #include "ONIVideoInput.h"
+#include "Tracker.h"
+#include "Device.h"
+#include "External.h"
+#include "Viewer.h"
 
 using namespace std;
 using namespace cv;
 
-#define FAST_THRESHOLD 40
+#define FRAME_BY_FRAME false
 
-
-
-void projectDepthMap(vector<Point3f> &depthKeypoints, vector<KeyPoint> &imageKeypoints, Mat &T, Mat &R, Mat &projectedDepthImage) {
-	// Compute center from T and R (-Rt?)
-	// compute distance from center to each depth keypoint
-	// store that as pixel value in new image for image keypoint and surrounding pixels
-	// Gaussian blur the image
-}
+Mat roomDepth, roomImage, currentDepth, currentExternalImage, deviceImage, R, t;
+Mat cameraMatrix;
+Mat viewableRoomDepth, viewableRoomImage, viewableCurrentDepth, viewableCurrentExternalImage, viewableDeviceImage;
 
 int main() {
+	float focal = 500;
+	cameraMatrix = (Mat_<float>(3, 3) << 658.46, 0, 399.5, 0, 658.46, 239.5, 0, 0, 1);
+
 	cout << "Initializing camera inputs..." << endl;
 	CVVideoInput deviceVideo = CVVideoInput("/Users/john/Dropbox/School/Research/videos/video2.mp4");
-	ONIVideoInput externalVideo = ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 400);
+	ONIVideoInput externalVideo = ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 0);
 	cout << "Camera inputs initialized" << endl;
 
-	FastFeatureDetector f = FastFeatureDetector(FAST_THRESHOLD);
-	Device d(deviceVideo, f);
-	External e(externalVideo);
-	Tracker t(d, e);
-	Viewer v(t);
+	externalVideo.getFirstDepthFrame(roomDepth);
+	externalVideo.getFirstImageFrame(roomImage);
 
-	while (t.advanceFrame()) {
-		v.updateDisplay();
+	Tracker tracker(roomImage, roomDepth, cameraMatrix, focal);
+	cout << "Tracker initialized" << endl;
+
+	Viewer viewer(tracker);
+
+	waitKey(0);
+
+	while (deviceVideo.getNextImageFrame(deviceImage) && externalVideo.getNextDepthFrame(currentDepth) && externalVideo.getNextImageFrame(currentExternalImage)) {
+		tracker.computePosePnP(deviceImage, R, t);
+		viewer.updateDisplay(R, t);
+		cout << R << endl;
+		cout << t << endl;
 	}
 
 
 
-
-
-
-	Mat deviceImage, deviceImageBw, externalImage, externalImageBw, externalRangeImage;
-	Mat augmentedDeviceImage, augmentedExternalImage, viewableDepthOutput;
-	Mat imgMatches;
-	Mat objectPoints;
-	Mat R, Rmat, T, K;
-	Mat transImg = Mat(600, 600, CV_8UC1);
-
-	// TODO: Set k as camera matrix
-	K = Mat::eye(3, 3, CV_64F);
-
-	vector<KeyPoint> deviceKeyPoints;
-	vector<Point2f> matchedDevicePoints;
-	vector<KeyPoint> externalKeyPoints;
-	vector<Point3f> objectKeyPoints;
-	vector<Point3f> matchedObjectPoints;
-	vector<DMatch> matches;
-
-	pcl::RangeImagePlanar rangeImage;
-
-	cout << "Getting initial frame from external camera..." << endl;
-	externalVideo.getFirstImageFrame(externalImage);
-	externalVideo.getFirstDepthFrame(externalRangeImage);
-
-	makeRangeImagePlanar(rangeImage, externalRangeImage, externalVideo);
-
-	cvtColor(externalImage, externalImageBw, CV_RGB2GRAY);
-	extractKeyPoints(externalImageBw,  externalKeyPoints);
-	findDepthKeyPoints(externalKeyPoints, externalRangeImage, objectKeyPoints, rangeImage);
-	augmentImage(externalImage, augmentedExternalImage, externalKeyPoints);
-	imshow("External Key Points", augmentedExternalImage);
-	cout << "Frame received" << endl;
-
-	bool validDeviceImage = deviceVideo.getNextImageFrame(deviceImage);
-	bool validExternalImage = externalVideo.getNextImageFrame(externalImage);
-	bool validDepthImage = externalVideo.getNextDepthFrame(externalRangeImage);
-
-	while (validDeviceImage && validExternalImage && validDepthImage) {
-		cvtColor(deviceImage, deviceImageBw, CV_RGB2GRAY);
-		extractKeyPoints(deviceImageBw, deviceKeyPoints);
-		//keyPointMatches(externalImageFrameBw, externalKeyPoints, externalImageFrameBw, externalKeyPoints, matches);
-		//alignDepthVectors(objectKeyPoints, externalKeyPoints, matches, matchedObjectPoints, matchedDevicePoints);
-		solvePnPRansac(matchedObjectPoints, matchedDevicePoints, K, Mat(), R, T);
-		Rodrigues(R, Rmat);
-
-
-	}
 
 	/*
 	outputVideo.open(NAME, ex, inputVideo.get(CV_CAP_PROP_FPS), S, true);

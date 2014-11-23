@@ -9,13 +9,18 @@
 #define VIEWER_H_
 
 #include "Tracker.h"
+#include "pcl/visualization/cloud_viewer.h"
 
 class Viewer {
 public:
 	Viewer(Tracker &t);
-	void updateDisplay();
+	void updateDisplay(cv::Mat R, cv::Mat t);
 private:
 	Tracker* tracker;
+	std::vector<cv::KeyPoint> deviceKeyPoints;
+	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
+	void makeViewableDepthImage(cv::Mat &input, cv::Mat &output);
+	void augmentImage(cv::Mat &image, cv::Mat &output, std::vector<cv::KeyPoint>& keypoints, std::string text = "");
 };
 
 

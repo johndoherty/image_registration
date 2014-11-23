@@ -23,7 +23,7 @@ include_directories(${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${OPENNI_INCLUDE
 link_directories(${Boost_LIBRARY_DIRS} ${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable (image_registration main.cpp CVVideoInput.cpp ONIVideoInput.cpp)
+add_executable (image_registration main.cpp CVVideoInput.cpp ONIVideoInput.cpp DepthInput.cpp Device.cpp External.cpp Tracker.cpp Viewer.cpp)
 target_link_libraries(image_registration ${OpenCV_LIBS} ${Boost_LIBRARIES} ${OPENNI_LIBRARIES} ${PCL_LIBRARIES})
 
 IF(CMAKE_COMPILER_IS_GNUCC)
