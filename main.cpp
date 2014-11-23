@@ -6,7 +6,6 @@
 #include "opencv2/features2d/features2d.hpp"
 #include "opencv2/nonfree/features2d.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
-#include "pcl/range_image/range_image_planar.h"
 #include "pcl/visualization/cloud_viewer.h"
 #include "CVVideoInput.h"
 #include "ONIVideoInput.h"
