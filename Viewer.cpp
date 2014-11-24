@@ -43,10 +43,15 @@ void Viewer::makeViewableDepthImage(Mat &input, Mat &output) {
 void Viewer::updateDisplay(Mat R, Mat t) {
 	Mat imageMatches, augmentedDeviceImage;
 
-	drawMatches(tracker->deviceBwImage, tracker->deviceKeyPoints, tracker->roomBwImage, tracker->roomKeyPoints,
+	cout << "Device key points: " << tracker->deviceKeyPoints.size() << endl;
+	cout << "Room key points: " << tracker->roomKeyPoints.size() << endl;
+	cout << "Number of matches: " << tracker->matches.size() << endl;
+	/*drawMatches(tracker->deviceBwImage, tracker->deviceKeyPoints, tracker->roomBwImage, tracker->roomKeyPoints,
 			tracker->matches, imageMatches, Scalar::all(-1), Scalar::all(-1),
-			vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-
+			vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );*/
+	drawMatches(tracker->roomBwImage, tracker->roomKeyPoints, tracker->deviceBwImage, tracker->deviceKeyPoints,
+				tracker->matches, imageMatches, Scalar::all(-1), Scalar::all(-1),
+				vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 	augmentImage(tracker->deviceBwImage, augmentedDeviceImage, deviceKeyPoints);
 	imshow("Device Video", augmentedDeviceImage);
 	imshow("Matches", imageMatches);

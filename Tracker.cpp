@@ -45,7 +45,6 @@ void Tracker::buildRoomKeyLocations() {
 }
 
 void Tracker::buildRoomPointCloud() {
-	cout << "Number of keypoints: " << roomKeyPoints.size() << endl;
 	for (int row = 0; row < roomDepth.rows; row++) {
 		for (int col = 0; col < roomDepth.cols; col++) {
 			Eigen::Vector3f v;
@@ -81,14 +80,10 @@ void Tracker::computePosePnP(cv::Mat &deviceImage, cv::Mat &R, cv::Mat &t) {
 	deviceKeyPoints.clear();
 	cvtColor(deviceImage, deviceBwImage, CV_RGB2GRAY);
 	extractKeyPoints(deviceBwImage, deviceKeyPoints);
-	cout << "Matching" << endl;
 	keyPointMatches(roomBwImage, roomKeyPoints, deviceBwImage, deviceKeyPoints, matches);
 
 	vector<Point2f> devicePoints;
 	vector<Point3f> alignedWorldPoints;
-	cout << "World points: " << roomKeyLocation.size() << endl;
-	cout << "External key points: " << roomKeyPoints.size() << endl;
-	cout << "Device key points: " << deviceKeyPoints.size() << endl;
 	for (int i = 0; i < matches.size(); i++) {
 		devicePoints.push_back(deviceKeyPoints[matches[i].queryIdx].pt);
 		alignedWorldPoints.push_back(roomKeyLocation[matches[i].trainIdx]);
@@ -105,7 +100,6 @@ void Tracker::keyPointMatches(Mat &externalImage, vector<KeyPoint> &externalKeyP
 	Mat trainDescriptors, queryDescriptors;
 	extractor.compute(externalImage, externalKeyPoints, trainDescriptors);
 	extractor.compute(deviceImage, deviceKeyPoints, queryDescriptors);
-	cout << "Matching" << endl;
 	//BFMatcher matcher;
 	FlannBasedMatcher matcher;
 	initialMatches.clear();
@@ -117,18 +111,18 @@ void Tracker::keyPointMatches(Mat &externalImage, vector<KeyPoint> &externalKeyP
 	//-- Quick calculation of max and min distances between keypoints
 	for(int i = 0; i < trainDescriptors.rows; i++) {
 		double dist = initialMatches[i].distance;
-		cout << dist << endl;
 		if (dist < min_dist) min_dist = dist;
 		if (dist > max_dist) max_dist = dist;
 	}
 	cout << "Min dist: " << min_dist << endl;
 	matches.clear();
 	for(int i = 0; i < trainDescriptors.rows; i++) {
-		if(initialMatches[i].distance <= max(1.6*min_dist, 250.0)) {
+		if(initialMatches[i].distance <= max(1.8*min_dist, 250.0)) {
+			cout << "Query idx: " << initialMatches[i].queryIdx << endl;
+			cout << "Training idx: " << initialMatches[i].trainIdx << endl;
 			matches.push_back(initialMatches[i]);
 		}
 	}
-	cout << "Number of matches: " << matches.size() << endl;
 }
 
 
