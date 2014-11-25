@@ -15,6 +15,10 @@
 #include "opencv2/nonfree/features2d.hpp"
 #include "pcl/visualization/cloud_viewer.h"
 #include "pcl/point_cloud.h"
+#include <pcl/ModelCoefficients.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
 
 class Tracker {
 public:
@@ -36,16 +40,18 @@ private:
 	cv::Mat roomBwImage;
 	cv::Mat deviceBwImage;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr roomPointCloud;
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr segmentedPointCloud;
 	std::vector<cv::KeyPoint> roomKeyPoints;
 	std::vector<cv::KeyPoint> deviceKeyPoints;
 	std::vector<cv::Point3f> roomKeyLocation;
 	std::vector<cv::DMatch> matches;
-	std::vector<cv::DMatch> initialMatches;
+	pcl::ModelCoefficients::Ptr coefficients;
 
 	void keyPointMatches(cv::Mat &trainImage, std::vector<cv::KeyPoint> &trainKeypoints, cv::Mat &queryImage, std::vector<cv::KeyPoint> &queryKeypoints, std::vector<cv::DMatch> &matches);
 	void extractKeyPoints(cv::Mat &image, std::vector<cv::KeyPoint> &keyPoints);
 	void buildRoomPointCloud();
 	void buildRoomKeyLocations();
+	void resizeDeviceImage(cv::Mat &input, cv::Mat &output, cv::Size targetSize);
 };
 
 

@@ -10,12 +10,16 @@
 
 #include "Tracker.h"
 #include "pcl/visualization/cloud_viewer.h"
+#include "pcl/visualization/common/common.h"
 
 class Viewer {
 public:
 	Viewer(Tracker &t);
 	void updateDisplay(cv::Mat R, cv::Mat t);
 private:
+	int v0;
+	int v1;
+	int frame;
 	Tracker* tracker;
 	std::vector<cv::KeyPoint> deviceKeyPoints;
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;

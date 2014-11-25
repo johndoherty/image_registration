@@ -15,14 +15,14 @@
 using namespace std;
 using namespace cv;
 
-#define FRAME_BY_FRAME false
+#define FRAME_BY_FRAME true
 
 Mat roomDepth, roomImage, currentDepth, currentExternalImage, deviceImage, R, t;
 Mat cameraMatrix;
 Mat viewableRoomDepth, viewableRoomImage, viewableCurrentDepth, viewableCurrentExternalImage, viewableDeviceImage;
 
 int main() {
-	float focal = 500;
+	float focal = 200;
 	cameraMatrix = (Mat_<float>(3, 3) << 658.46, 0, 399.5, 0, 658.46, 239.5, 0, 0, 1);
 
 	cout << "Initializing camera inputs..." << endl;
@@ -45,6 +45,15 @@ int main() {
 		viewer.updateDisplay(R, t);
 		cout << R << endl;
 		cout << t << endl;
+		char pressed;
+		if (FRAME_BY_FRAME) {
+			pressed = (char)waitKey(0);
+		} else {
+			pressed = (char)waitKey(10);
+		}
+		if (pressed == 'q' || pressed == 'Q') {
+			return 0;
+		}
 	}
 
 
