@@ -23,7 +23,7 @@
 class Tracker {
 public:
 	Tracker(cv::Mat &startImage, cv::Mat &startDepth, cv::Mat &deviceCamera, float depthFocal);
-	void computePosePnP(cv::Mat &deviceImage, cv::Mat &R, cv::Mat &t);
+	bool computePosePnP(cv::Mat &deviceImage, cv::Mat &depth, cv::Point3f headLocation, cv::Mat &R, cv::Mat &t);
 	std::vector<cv::DMatch>* getMatches();
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr getRoomPointCloud();
 	cv::Point3f depthImagePointToRoomLocation(cv::Point2f imageCoord);
@@ -39,6 +39,7 @@ private:
 	cv::Mat roomImage;
 	cv::Mat roomBwImage;
 	cv::Mat deviceBwImage;
+	cv::Point3f currentHeadLocation;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr roomPointCloud;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr segmentedPointCloud;
 	std::vector<cv::KeyPoint> roomKeyPoints;

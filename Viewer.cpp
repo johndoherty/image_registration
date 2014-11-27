@@ -13,12 +13,12 @@ using namespace cv;
 
 void mouseEventOccured (const pcl::visualization::MouseEvent &event, void* viewer_void) {
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = *static_cast<boost::shared_ptr<pcl::visualization::PCLVisualizer> *> (viewer_void);
-		std::cout << "s was pressed => saving camera angle as camera_params" << std::endl;
-		viewer->saveCameraParameters("camera_params");
+	std::cout << "s was pressed => saving camera angle as camera_params" << std::endl;
+	viewer->saveCameraParameters("camera_params");
 }
 
 Viewer::Viewer(Tracker &t) {
-	Mat augmentedRoomImage, viewableDepth;
+	Mat augmentedRoomImage;
 	tracker = &t;
 	frame = 0;
 	v0 = 0; v1 = 1;
@@ -37,9 +37,10 @@ Viewer::Viewer(Tracker &t) {
 		viewer->addSphere(pcl::PointXYZ(p.x, p.y, p.z), 0.1, 255, 0, 0, to_string(i), v0);
 	}
 
-
+	Point3f head = tracker->currentHeadLocation;
+	viewer->addSphere(pcl::PointXYZ(head.x, head.y, head.z), 0.1, 0, 0, 255, "Head", v0);
 	augmentImage(tracker->roomBwImage, augmentedRoomImage, tracker->roomKeyPoints);
-	makeViewableDepthImage(tracker->roomDepth, viewableDepth);
+
 	pcl::PointXYZ p;
 	p.x = 0;
 	p.y = 0;
@@ -65,7 +66,7 @@ void Viewer::makeViewableDepthImage(Mat &input, Mat &output) {
 }
 
 void Viewer::updateDisplay(Mat R, Mat t) {
-	Mat imageMatches, augmentedDeviceImage;
+	Mat imageMatches, augmentedDeviceImage, viewableDepth;
 	Mat center = -1 * R.t() * t;
 	cout << "Device key points: " << tracker->deviceKeyPoints.size() << endl;
 	cout << "Room key points: " << tracker->roomKeyPoints.size() << endl;
@@ -75,6 +76,9 @@ void Viewer::updateDisplay(Mat R, Mat t) {
 	p.x = center.at<double>(0);
 	p.y = center.at<double>(1);
 	p.z = center.at<double>(2);
+	Point3f head = tracker->currentHeadLocation;
+	cout << "Head location: " << head << endl;
+	viewer->updateSphere(pcl::PointXYZ(head.x, head.y, head.z), 0.1, 0, 0, 255, "Head");
 	viewer->updateSphere(p, 0.1, 0, 255, 0, "camera");
 	//viewer->loadCameraParameters("camera_params");
 	for (int i = 0; i < tracker->matches.size(); i++) {
@@ -83,6 +87,12 @@ void Viewer::updateDisplay(Mat R, Mat t) {
 		if (tracker->matches[i].trainIdx >= tracker->roomKeyPoints.size())
 			cout << "Train index too large: " << tracker->matches[i].trainIdx << ", match: " << i << endl;*/
 	}
+
+	if (!tracker->currentDepthImage.empty()) {
+		makeViewableDepthImage(tracker->currentDepthImage, viewableDepth);
+		imshow("Depth", viewableDepth);
+	}
+
 	drawMatches(tracker->deviceBwImage, tracker->deviceKeyPoints, tracker->roomBwImage, tracker->roomKeyPoints,
 			tracker->matches, imageMatches, Scalar::all(-1), Scalar::all(-1),
 			vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );

@@ -11,31 +11,46 @@
 #include <XnCppWrapper.h>
 
 class ONIVideoInput: public ImageInput, public DepthInput {
-    public:
-		ONIVideoInput(std::string filename, int startFrame = 0);
-        ~ONIVideoInput();
+public:
+	ONIVideoInput(std::string filename, int startFrame = 0);
+	~ONIVideoInput();
 
-        int getCurrentFrameCount();
-        void getFirstImageFrame(cv::Mat &firstFrame);
-        void getFirstDepthFrame(cv::Mat &firstFrame);
-        bool getNextImageFrame(cv::Mat &frame);
-        bool getNextDepthFrame(cv::Mat &frame);
+	int getCurrentFrameCount();
+	void getFirstImageFrame(cv::Mat &firstFrame);
+	void getFirstDepthFrame(cv::Mat &firstFrame);
+	bool getNextImageFrame(cv::Mat &frame);
+	bool getNextDepthFrame(cv::Mat &frame);
+	bool getNextUserHeadLocation(cv::Point3f &headLocation);
 
-        cv::Point2f getCenterOfProjection() const;
-        cv::Point2f getFocalLength() const;
-    private:
-        cv::Mat firstImageFrame;
-        cv::Mat firstDepthFrame;
+	cv::Point2f getCenterOfProjection() const;
+	cv::Point2f getFocalLength() const;
 
-        int currentFrameCount;
-        int totalFrameCount;
+	//XnChar strPose[20];
+	//bool needPose;
+	void newUser(XnUserID nId);
+	void lostUser(XnUserID nId);
+	void calibrationComplete(XnUserID nId, XnCalibrationStatus eStatus);
+	void calibrationStart(XnUserID nId);
+	void poseDetected(const XnChar* strPose, XnUserID nId);
 
-        xn::Context context;
-        xn::Player player;
-        xn::ImageGenerator imageGen;
-        xn::DepthGenerator depthGen;
-        XnUInt32 frame_height;
-        XnUInt32 frame_width;
+private:
+	cv::Mat firstImageFrame;
+	cv::Mat firstDepthFrame;
+
+	int currentFrameCount;
+	int totalFrameCount;
+
+	xn::Context context;
+	xn::Player player;
+	xn::ImageGenerator imageGen;
+	xn::DepthGenerator depthGen;
+	xn::UserGenerator userGen;
+	bool supportsUserTracking;
+	bool needPose;
+	XnChar strPose[20];
+	XnUInt32 frame_height;
+	XnUInt32 frame_width;
+
 };
 
 #endif /* ONI_VIDEO_INPUT_H_ */

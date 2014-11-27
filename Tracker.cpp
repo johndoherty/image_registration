@@ -155,9 +155,11 @@ PointCloud<PointXYZRGB>::Ptr Tracker::getRoomPointCloud() {
 	return roomPointCloud;
 }
 
-void Tracker::computePosePnP(cv::Mat &deviceImage, cv::Mat &R, cv::Mat &t) {
+bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Point3f headLocation, Mat &R, Mat &t) {
 	Mat Rvec;
 	deviceKeyPoints.clear();
+	depth.copyTo(currentDepthImage);
+	currentHeadLocation = Point3f(headLocation);
 	cvtColor(deviceImage, deviceBwImage, CV_RGB2GRAY);
 	resizeDeviceImage(deviceBwImage, deviceBwImage, roomBwImage.size());
 	//resize(deviceBwImage, deviceBwImage, roomBwImage.size());
@@ -166,11 +168,16 @@ void Tracker::computePosePnP(cv::Mat &deviceImage, cv::Mat &R, cv::Mat &t) {
 
 	vector<Point2f> devicePoints;
 	vector<Point3f> alignedWorldPoints;
+	if (matches.size() < 3) {
+		cout << "Not enough matches" << endl;
+		return false;
+	}
+
 	for (int i = 0; i < matches.size(); i++) {
 		devicePoints.push_back(deviceKeyPoints[matches[i].queryIdx].pt);
 		alignedWorldPoints.push_back(roomKeyLocation[matches[i].trainIdx]);
 	}
-
+	//TODO: Handle no matches
 	Mat inliers;
 	cout << "Solving pnp..." << endl;
 	solvePnPRansac(
@@ -189,6 +196,7 @@ void Tracker::computePosePnP(cv::Mat &deviceImage, cv::Mat &R, cv::Mat &t) {
 	);
 	cout << "Number of inliers: " << inliers.size() << endl;
 	Rodrigues(Rvec, R);
+	return true;
 }
 
 void Tracker::resizeDeviceImage(Mat &input, Mat &output, Size targetSize) {

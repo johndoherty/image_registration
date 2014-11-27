@@ -20,14 +20,16 @@ using namespace cv;
 Mat roomDepth, roomImage, currentDepth, currentExternalImage, deviceImage, R, t;
 Mat cameraMatrix;
 Mat viewableRoomDepth, viewableRoomImage, viewableCurrentDepth, viewableCurrentExternalImage, viewableDeviceImage;
+Point3f headLocation;
 
 int main() {
 	float focal = 200;
 	cameraMatrix = (Mat_<float>(3, 3) << 658.46, 0, 399.5, 0, 658.46, 239.5, 0, 0, 1);
+	headLocation = Point3f(0.0, 0.0, 0.0);
 
 	cout << "Initializing camera inputs..." << endl;
 	CVVideoInput deviceVideo = CVVideoInput("/Users/john/Dropbox/School/Research/videos/video2.mp4");
-	ONIVideoInput externalVideo = ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 0);
+	ONIVideoInput externalVideo = ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 400);
 	cout << "Camera inputs initialized" << endl;
 
 	externalVideo.getFirstDepthFrame(roomDepth);
@@ -41,7 +43,8 @@ int main() {
 	waitKey(0);
 
 	while (deviceVideo.getNextImageFrame(deviceImage) && externalVideo.getNextDepthFrame(currentDepth) && externalVideo.getNextImageFrame(currentExternalImage)) {
-		tracker.computePosePnP(deviceImage, R, t);
+		externalVideo.getNextUserHeadLocation(headLocation);
+		tracker.computePosePnP(deviceImage, currentDepth, headLocation, R, t);
 		viewer.updateDisplay(R, t);
 		cout << R << endl;
 		cout << t << endl;
