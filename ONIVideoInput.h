@@ -21,9 +21,7 @@ public:
 	bool getNextImageFrame(cv::Mat &frame);
 	bool getNextDepthFrame(cv::Mat &frame);
 	bool getNextUserHeadLocation(cv::Point3f &headLocation);
-
-	cv::Point2f getCenterOfProjection() const;
-	cv::Point2f getFocalLength() const;
+	void depthImageCoordsToWorldCoords(cv::Mat &depthImage, std::vector<cv::Point2f> imageCoords, std::vector<cv::Point3f> &worldCoords);
 
 	//XnChar strPose[20];
 	//bool needPose;

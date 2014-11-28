@@ -245,19 +245,32 @@ bool ONIVideoInput::getNextUserHeadLocation(cv::Point3f &headLocation) {
 	return false;
 }
 
+void ONIVideoInput::depthImageCoordsToWorldCoords(Mat &depthImage, std::vector<cv::Point2f> imageCoords, std::vector<cv::Point3f> &worldCoords) {
+	Point3f location;
+	boost::shared_ptr<XnPoint3D[]> projectivePoints(new XnPoint3D[imageCoords.size()]);
+	boost::shared_ptr<XnPoint3D[]> worldPoints(new XnPoint3D[imageCoords.size()]);
+
+	// Convert points for openni
+	for (int i = 0; i < imageCoords.size(); i++) {
+		projectivePoints[i].X = imageCoords[i].x;
+		projectivePoints[i].Y = imageCoords[i].y;
+		projectivePoints[i].Z = depthImage.at<unsigned short>(imageCoords[i]);
+	}
+
+	depthGen.ConvertProjectiveToRealWorld(imageCoords.size(), projectivePoints.get(), worldPoints.get());
+
+	// Convert points back for opencv
+	for (int i = 0; i < imageCoords.size(); i++) {
+		worldCoords.push_back(Point3f(worldPoints[i].X * 0.001, worldPoints[i].Y * 0.001, worldPoints[i].Z * 0.001));
+	}
+	//float z_float = ((float)z) * 0.001f;
+	/*location.x = (depthImage.x - (.5 * roomDepth.cols)) * (z_float / 200);
+	location.y = (depthImage.y - (.5 * roomDepth.rows)) * (z_float / 200);
+	location.z = z_float;*/
+}
+
 int ONIVideoInput::getCurrentFrameCount() {
 	return currentFrameCount;
 }
-
-Point2f ONIVideoInput::getFocalLength() const{
-	// TODO: finish this
-	return Point2f(0, 0);
-}
-
-Point2f ONIVideoInput::getCenterOfProjection() const{
-	// TODO
-	return Point2f(0, 0);
-}
-
 
 

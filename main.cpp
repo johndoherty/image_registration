@@ -11,6 +11,7 @@
 #include "ONIVideoInput.h"
 #include "Tracker.h"
 #include "Viewer.h"
+#include "PointCloudWrapper.h"
 
 using namespace std;
 using namespace cv;
@@ -28,22 +29,24 @@ int main() {
 	headLocation = Point3f(0.0, 0.0, 0.0);
 
 	cout << "Initializing camera inputs..." << endl;
-	CVVideoInput deviceVideo = CVVideoInput("/Users/john/Dropbox/School/Research/videos/video2.mp4");
-	ONIVideoInput externalVideo = ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 400);
+	boost::shared_ptr<CVVideoInput> deviceVideo = boost::shared_ptr<CVVideoInput>(new CVVideoInput("/Users/john/Dropbox/School/Research/videos/video2.mp4"));
+	boost::shared_ptr<ONIVideoInput> externalVideo = boost::shared_ptr<ONIVideoInput>(new ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 400));
 	cout << "Camera inputs initialized" << endl;
 
-	externalVideo.getFirstDepthFrame(roomDepth);
-	externalVideo.getFirstImageFrame(roomImage);
+	boost::shared_ptr<PointCloudWrapper> wrapper = boost::shared_ptr<PointCloudWrapper>(new PointCloudWrapper(externalVideo));
 
-	Tracker tracker(roomImage, roomDepth, cameraMatrix, focal);
+	externalVideo->getFirstDepthFrame(roomDepth);
+	externalVideo->getFirstImageFrame(roomImage);
+
+	Tracker tracker(roomImage, roomDepth, cameraMatrix, wrapper);
 	cout << "Tracker initialized" << endl;
 
 	Viewer viewer(tracker);
 
 	waitKey(0);
 
-	while (deviceVideo.getNextImageFrame(deviceImage) && externalVideo.getNextDepthFrame(currentDepth) && externalVideo.getNextImageFrame(currentExternalImage)) {
-		externalVideo.getNextUserHeadLocation(headLocation);
+	while (deviceVideo->getNextImageFrame(deviceImage) && externalVideo->getNextDepthFrame(currentDepth) && externalVideo->getNextImageFrame(currentExternalImage)) {
+		externalVideo->getNextUserHeadLocation(headLocation);
 		tracker.computePosePnP(deviceImage, currentDepth, headLocation, R, t);
 		viewer.updateDisplay(R, t);
 		cout << R << endl;

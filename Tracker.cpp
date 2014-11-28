@@ -6,7 +6,6 @@
  */
 
 #include "Tracker.h"
-#include <pcl/filters/extract_indices.h>
 
 using namespace std;
 using namespace cv;
@@ -14,8 +13,8 @@ using namespace pcl;
 
 #define FAST_THRESHOLD 40
 
-Tracker::Tracker(cv::Mat &startImage, cv::Mat &startDepth, cv::Mat &deviceCamera, float depthFocal) {
-	depthFocalLength = depthFocal;
+Tracker::Tracker(cv::Mat &startImage, cv::Mat &startDepth, cv::Mat &deviceCamera, boost::shared_ptr<PointCloudWrapper> wrapper) {
+	pointCloudWrapper = wrapper;
 	startImage.copyTo(roomImage);
 	startDepth.copyTo(roomDepth);
 	deviceCamera.copyTo(deviceCameraMatrix);
@@ -27,111 +26,18 @@ Tracker::Tracker(cv::Mat &startImage, cv::Mat &startDepth, cv::Mat &deviceCamera
 	PointCloud<PointXYZRGB> m;
 	segmentedPointCloud = m.makeShared();
 
-	buildRoomPointCloud();
+	pointCloudWrapper->pointCloudForDepthImage(roomDepth, roomImage, roomPointCloud);
+	pointCloudWrapper->segmentPointCloud(roomPointCloud, segmentedPointCloud);
 	buildRoomKeyLocations();
 }
 
-Point3f Tracker::depthImagePointToRoomLocation(Point2f imageCoord) {
-	Point3f location;
-	unsigned short z = roomDepth.at<unsigned short>(imageCoord.y, imageCoord.x);
-	float z_float = ((float)z) * 0.001f;
-
-	location.x = (imageCoord.x - (.5 * roomDepth.cols)) * (z_float / depthFocalLength);
-	location.y = (imageCoord.y - (.5 * roomDepth.rows)) * (z_float / depthFocalLength);
-	location.z = z_float;
-	return location;
-}
-
 void Tracker::buildRoomKeyLocations() {
+	vector<Point2f> imageCoords;
+	imageCoords.clear();
 	for (int i = 0; i < roomKeyPoints.size(); i++) {
-		Eigen::Vector3f v;
-		Point3f location = depthImagePointToRoomLocation(roomKeyPoints[i].pt);
-		roomKeyLocation.push_back(location);
+		imageCoords.push_back(roomKeyPoints[i].pt);
 	}
-}
-
-void Tracker::buildRoomPointCloud() {
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr tempPointCloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr tempPointCloud1(new pcl::PointCloud<pcl::PointXYZRGB>);
-	float minX, minY, minZ = 100;
-	float maxX, maxY, maxZ = 0;
-	for (int row = 0; row < roomDepth.rows; row++) {
-		for (int col = 0; col < roomDepth.cols; col++) {
-			Eigen::Vector3f v;
-			Point3f location = depthImagePointToRoomLocation(Point2f(col, row));
-			PointXYZRGB point;
-			point.x = location.x;
-			point.y = location.y;
-			point.z = location.z;
-			if (point.x > maxX) maxX = point.x;
-			if (point.x < minX) minX = point.x;
-			if (point.y > maxY) maxY = point.y;
-			if (point.y < minY) minY = point.y;
-			if (point.z > maxZ) maxZ = point.z;
-			if (point.z < minZ) minZ = point.z;
-			point.r = roomImage.at<Vec3b>(row,col)[2];
-			point.g = roomImage.at<Vec3b>(row,col)[1];
-			point.b = roomImage.at<Vec3b>(row,col)[0];
-			roomPointCloud->push_back(point);
-			tempPointCloud->push_back(point);
-		}
-	}
-	cout << "X range: " << minX << ", " << maxX << endl;
-	cout << "Y range: " << minY << ", " << maxY << endl;
-	cout << "Z range: " << minZ << ", " << maxZ << endl;
-
-	coefficients = pcl::ModelCoefficients::Ptr(new pcl::ModelCoefficients);
-	pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
-	// Create the segmentation object
-	pcl::SACSegmentation<pcl::PointXYZRGB> seg;
-	// Optional
-	seg.setOptimizeCoefficients(true);
-	// Mandatory
-	seg.setModelType(pcl::SACMODEL_PLANE);
-	seg.setMethodType(pcl::SAC_RANSAC);
-	seg.setDistanceThreshold(.05);
-	seg.setMaxIterations(1000);
-	pcl::ExtractIndices<pcl::PointXYZRGB> extract;
-
-	for (int i = 0; i < 5; i ++) {
-		seg.setInputCloud(tempPointCloud);
-		seg.segment(*inliers, *coefficients);
-		cout << "Inliers: " << inliers->indices.size() << endl;
-		cout << "Total points: " << roomPointCloud->points.size() << endl;
-		if (inliers->indices.size() == 0) {
-			PCL_ERROR("Could not estimate a planar model for the given dataset.");
-			break;
-		}
-		for (int j = 0; j < inliers->indices.size(); j++) {
-			PointXYZRGB n = tempPointCloud->points[inliers->indices[j]];
-			switch (i) {
-			case 0:
-				n.r = 255; n.g = 0; n.b = 0;
-				break;
-			case 1:
-				n.r = 0; n.g = 255; n.b = 0;
-				break;
-			case 2:
-				n.r = 0; n.g = 0; n.b = 255;
-				break;
-			case 3:
-				n.r = 0; n.g = 200; n.b = 200;
-				break;
-			case 4:
-				n.r = 200; n.g = 200; n.b = 0;
-				break;
-			default:
-				n.r = 200; n.g = 200; n.b = 200;
-				break;
-			}
-			segmentedPointCloud->push_back(n);
-		}
-		extract.setInputCloud(tempPointCloud);
-		extract.setIndices(inliers);
-		extract.setNegative (true);
-		extract.filter(*tempPointCloud1);
-		tempPointCloud.swap (tempPointCloud1);
-	}
+	pointCloudWrapper->depthImageCoordsToWorldCoords(roomDepth, imageCoords, roomKeyLocation);
 }
 
 void Tracker::extractKeyPoints(Mat &image, vector<KeyPoint> &keyPoints) {
@@ -145,14 +51,6 @@ void Tracker::extractKeyPoints(Mat &image, vector<KeyPoint> &keyPoints) {
 			0.04	// k
 	);
 	f.detect(image, keyPoints);
-}
-
-vector<DMatch>* Tracker::getMatches() {
-	return &matches;
-}
-
-PointCloud<PointXYZRGB>::Ptr Tracker::getRoomPointCloud() {
-	return roomPointCloud;
 }
 
 bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Point3f headLocation, Mat &R, Mat &t) {
@@ -177,7 +75,6 @@ bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Point3f headLocation,
 		devicePoints.push_back(deviceKeyPoints[matches[i].queryIdx].pt);
 		alignedWorldPoints.push_back(roomKeyLocation[matches[i].trainIdx]);
 	}
-	//TODO: Handle no matches
 	Mat inliers;
 	cout << "Solving pnp..." << endl;
 	solvePnPRansac(

@@ -8,13 +8,13 @@
 #ifndef DEPTHINPUT_H_
 #define DEPTHINPUT_H_
 
+#include "opencv2/core/core.hpp"
 #include "pcl/point_cloud.h"
 
 class DepthInput {
 public:
 	virtual bool getNextDepthFrame(cv::Mat &frame) = 0;
-	virtual cv::Point2f getFocalLength() const = 0;
-	virtual cv::Point2f getCenterOfProjection() const = 0;
+	virtual void depthImageCoordsToWorldCoords(cv::Mat &depthImage, std::vector<cv::Point2f> imageCoords, std::vector<cv::Point3f> &worldCoords) = 0;
 };
 
 
