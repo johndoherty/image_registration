@@ -18,7 +18,6 @@ void mouseEventOccured (const pcl::visualization::MouseEvent &event, void* viewe
 }
 
 Viewer::Viewer(Tracker &t) {
-	Mat augmentedRoomImage;
 	tracker = &t;
 	frame = 0;
 	v0 = 0; v1 = 1;
@@ -33,20 +32,26 @@ Viewer::Viewer(Tracker &t) {
 	viewer->loadCameraParameters("camera_params");
 
 	for (int i = 0; i < tracker->roomKeyLocation.size(); i++) {
+		Scalar color(((double) rand() / RAND_MAX), ((double) rand() / RAND_MAX), ((double) rand() / RAND_MAX));
+		//Scalar color(.5, .3, .7);
+		if (i < NUMBER_OF_COLORS) {
+			colors[i] = color;
+		}
+
 		Point3f p = tracker->roomKeyLocation[i];
-		viewer->addSphere(pcl::PointXYZ(p.x, p.y, p.z), 0.1, 255, 0, 0, to_string(i), v0);
+		viewer->addSphere(pcl::PointXYZ(p.x, p.y, p.z), 0.1, (double)color[0], (double)color[1], (double)color[2], to_string(i), v0);
 	}
+	numSpheres = tracker->roomKeyLocation.size();
 
 	Point3f head = tracker->currentHeadLocation;
 	viewer->addSphere(pcl::PointXYZ(head.x, head.y, head.z), 0.1, 0, 0, 255, "Head", v0);
-	augmentImage(tracker->roomBwImage, augmentedRoomImage, tracker->roomKeyPoints);
+	cvtColor(tracker->roomBwImage, roomImage, CV_GRAY2BGR);
 
 	pcl::PointXYZ p;
 	p.x = 0;
 	p.y = 0;
 	p.z = 0;
 	viewer->addSphere(p, 0.1, "camera");
-	imshow("Room", augmentedRoomImage);
 	waitKey(1);
 }
 
@@ -54,9 +59,24 @@ Viewer::Viewer(Tracker &t) {
 
 void Viewer::augmentImage(Mat &input, Mat &output, vector<KeyPoint>& keypoints, std::string text) {
 	input.copyTo(output);
-	putText(input, text, Point(10, input.rows - 10), FONT_HERSHEY_SIMPLEX, 1, Scalar(255,255,255));
+	vector<Point2f> points;
+	points.clear();
 	for (int i = 0; i < keypoints.size(); i++) {
-		circle(input, keypoints[i].pt, 5, Scalar(255, 0, 0), 1);
+		points.push_back(keypoints[i].pt);
+	}
+	augmentImage(input, output, points, text);
+}
+
+void Viewer::augmentImage(Mat &input, Mat &output, vector<Point2f>& keypoints, std::string text) {
+	input.copyTo(output);
+	putText(output, text, Point(10, input.rows - 10), FONT_HERSHEY_SIMPLEX, 1, Scalar(255,255,255));
+	for (int i = 0; i < keypoints.size(); i++) {
+		Scalar color(255, 0, 0);
+		if (i < NUMBER_OF_COLORS) {
+			color = colors[i];
+			color[0] *= 255; color[1] *= 255; color[2] *= 255;
+		}
+		circle(output, keypoints[i], 7, color, 3);
 	}
 }
 
@@ -66,8 +86,8 @@ void Viewer::makeViewableDepthImage(Mat &input, Mat &output) {
 }
 
 void Viewer::updateDisplay(Mat R, Mat t) {
-	Mat imageMatches, augmentedDeviceImage, viewableDepth;
-	Mat center = -1 * R.t() * t;
+	Mat imageMatches, augmentedDeviceImage, viewableDepth, augmentedRoomImage;
+	Mat center = R.t() * t;
 	cout << "Device key points: " << tracker->deviceKeyPoints.size() << endl;
 	cout << "Room key points: " << tracker->roomKeyPoints.size() << endl;
 	cout << "Number of matches: " << tracker->matches.size() << endl;
@@ -80,6 +100,21 @@ void Viewer::updateDisplay(Mat R, Mat t) {
 	cout << "Head location: " << head << endl;
 	viewer->updateSphere(pcl::PointXYZ(head.x, head.y, head.z), 0.1, 0, 0, 255, "Head");
 	viewer->updateSphere(p, 0.1, 0, 255, 0, "camera");
+
+	for (int i = 0; i < numSpheres; i++) {
+		if (i < tracker->alignedWorldPoints.size()) {
+			Scalar color(255, 0, 0);
+			if (i < NUMBER_OF_COLORS) {
+				color = colors[i];
+			}
+			Point3f point = tracker->alignedWorldPoints[i];
+			viewer->updateSphere(pcl::PointXYZ(point.x, point.y, point.z), 0.1, color[0], color[1], color[2], to_string(i));
+		} else {
+			viewer->removeShape(to_string(i));
+		}
+	}
+
+	viewer->removeShape();
 	//viewer->loadCameraParameters("camera_params");
 	for (int i = 0; i < tracker->matches.size(); i++) {
 		/*if (tracker->matches[i].queryIdx >= tracker->deviceKeyPoints.size())
@@ -96,7 +131,10 @@ void Viewer::updateDisplay(Mat R, Mat t) {
 	drawMatches(tracker->deviceBwImage, tracker->deviceKeyPoints, tracker->roomBwImage, tracker->roomKeyPoints,
 			tracker->matches, imageMatches, Scalar::all(-1), Scalar::all(-1),
 			vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
-	augmentImage(tracker->deviceBwImage, augmentedDeviceImage, deviceKeyPoints);
+	//augmentImage(tracker->deviceBwImage, augmentedDeviceImage, deviceKeyPoints);
+	cvtColor(tracker->deviceBwImage, augmentedDeviceImage, CV_GRAY2RGB);
+	augmentImage(augmentedDeviceImage, augmentedDeviceImage, tracker->alignedDevicePoints);
+
 	imshow("Device Video", augmentedDeviceImage);
 	imshow("Matches", imageMatches);
 	waitKey(1);

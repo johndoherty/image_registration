@@ -24,6 +24,7 @@ public:
 	void segmentPointCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud, pcl::PointCloud<pcl::PointXYZRGB>::Ptr segmentedPointCloud);
 	void depthImageCoordsToWorldCoords(cv::Mat &depthImage, std::vector<cv::Point2f> imageCoords, std::vector<cv::Point3f> &worldCoords);
 	cv::Point3f depthImageCoordToWorldCoord(cv::Mat &depthImage, cv::Point2f imageCoord);
+	bool validWorldCoord(cv::Point3f worldCoord);
 private:
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr pointCloud;
 	boost::shared_ptr<DepthInput> depthInput;

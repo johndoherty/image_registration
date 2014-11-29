@@ -30,7 +30,7 @@ int main() {
 
 	cout << "Initializing camera inputs..." << endl;
 	boost::shared_ptr<CVVideoInput> deviceVideo = boost::shared_ptr<CVVideoInput>(new CVVideoInput("/Users/john/Dropbox/School/Research/videos/video2.mp4"));
-	boost::shared_ptr<ONIVideoInput> externalVideo = boost::shared_ptr<ONIVideoInput>(new ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 400));
+	boost::shared_ptr<ONIVideoInput> externalVideo = boost::shared_ptr<ONIVideoInput>(new ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 0));
 	cout << "Camera inputs initialized" << endl;
 
 	boost::shared_ptr<PointCloudWrapper> wrapper = boost::shared_ptr<PointCloudWrapper>(new PointCloudWrapper(externalVideo));
@@ -42,8 +42,6 @@ int main() {
 	cout << "Tracker initialized" << endl;
 
 	Viewer viewer(tracker);
-
-	waitKey(0);
 
 	while (deviceVideo->getNextImageFrame(deviceImage) && externalVideo->getNextDepthFrame(currentDepth) && externalVideo->getNextImageFrame(currentExternalImage)) {
 		externalVideo->getNextUserHeadLocation(headLocation);

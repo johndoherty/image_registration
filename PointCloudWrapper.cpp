@@ -63,7 +63,6 @@ void PointCloudWrapper::segmentPointCloud(PointCloud<PointXYZRGB>::Ptr pointClou
 	for (int i = 0; i < 5; i ++) {
 		seg.setInputCloud(tempPointCloud);
 		seg.segment(*inliers, *coefficients);
-		cout << "Inliers: " << inliers->indices.size() << endl;
 		if (inliers->indices.size() == 0) {
 			PCL_ERROR("Could not estimate a planar model for the given dataset.");
 			break;
@@ -113,4 +112,8 @@ Point3f PointCloudWrapper::depthImageCoordToWorldCoord(Mat &depthImage, Point2f 
 	imageCoords.push_back(imageCoord);
 	depthImageCoordsToWorldCoords(depthImage, imageCoords, worldCoords);
 	return worldCoords[0];
+}
+
+bool PointCloudWrapper::validWorldCoord(cv::Point3f worldCoord) {
+	return (worldCoord.x != 0) || (worldCoord.y != 0) || (worldCoord.z != 0);
 }

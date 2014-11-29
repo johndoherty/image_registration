@@ -43,10 +43,10 @@ void Tracker::buildRoomKeyLocations() {
 void Tracker::extractKeyPoints(Mat &image, vector<KeyPoint> &keyPoints) {
 	//FastFeatureDetector f = FastFeatureDetector(FAST_THRESHOLD);
 	GoodFeaturesToTrackDetector f(
-			500,	// maxCorners
-			0.05,	// quality level
-			5,		// min distance
-			3,		// block size
+			1000,	// maxCorners
+			0.03,	// quality level
+			10,		// min distance
+			5,		// block size
 			true,	// use harris
 			0.04	// k
 	);
@@ -60,36 +60,40 @@ bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Point3f headLocation,
 	currentHeadLocation = Point3f(headLocation);
 	cvtColor(deviceImage, deviceBwImage, CV_RGB2GRAY);
 	resizeDeviceImage(deviceBwImage, deviceBwImage, roomBwImage.size());
-	//resize(deviceBwImage, deviceBwImage, roomBwImage.size());
 	extractKeyPoints(deviceBwImage, deviceKeyPoints);
 	keyPointMatches(roomBwImage, roomKeyPoints, deviceBwImage, deviceKeyPoints, matches);
 
-	vector<Point2f> devicePoints;
-	vector<Point3f> alignedWorldPoints;
-	if (matches.size() < 3) {
+	alignedDevicePoints.clear();
+	alignedWorldPoints.clear();
+
+	for (int i = 0; i < matches.size(); i++) {
+		if (pointCloudWrapper->validWorldCoord(roomKeyLocation[matches[i].trainIdx])) {
+			alignedDevicePoints.push_back(deviceKeyPoints[matches[i].queryIdx].pt);
+			alignedWorldPoints.push_back(roomKeyLocation[matches[i].trainIdx]);
+		}
+	}
+
+	cout << "Valid matches: " << alignedDevicePoints.size() << endl;
+	if (alignedDevicePoints.size() < 3) {
 		cout << "Not enough matches" << endl;
 		return false;
 	}
 
-	for (int i = 0; i < matches.size(); i++) {
-		devicePoints.push_back(deviceKeyPoints[matches[i].queryIdx].pt);
-		alignedWorldPoints.push_back(roomKeyLocation[matches[i].trainIdx]);
-	}
 	Mat inliers;
 	cout << "Solving pnp..." << endl;
 	solvePnPRansac(
-			alignedWorldPoints,	// object points
-			devicePoints,		// image points
-			deviceCameraMatrix,	// camera matrix
-			Mat(),				// distortion coeffs
-			Rvec,				// rotation matrix
-			t,					// translation matrix
-			false,				// use initial guess
-			1000,				// interation count
-			5.0,				// inlier threshold
-			100,				// number of inliers to stop
-			inliers,			// inlier indexes
-			ITERATIVE			// method
+			alignedWorldPoints,		// object points
+			alignedDevicePoints,	// image points
+			deviceCameraMatrix,		// camera matrix
+			Mat(),					// distortion coeffs
+			Rvec,					// rotation matrix
+			t,						// translation matrix
+			false,					// use initial guess
+			10000,					// interation count
+			2.0,					// inlier threshold
+			100,					// number of inliers to stop
+			inliers,				// inlier indexes
+			P3P						// method
 	);
 	cout << "Number of inliers: " << inliers.size() << endl;
 	Rodrigues(Rvec, R);
@@ -137,12 +141,7 @@ void Tracker::keyPointMatches(Mat &externalImage, vector<KeyPoint> &externalKeyP
 		if(initialMatches[i].distance <= max(1.7*min_dist, 350.0)) {
 			matches.push_back(initialMatches[i]);
 		}
-		if (initialMatches[i].queryIdx >= deviceKeyPoints.size())
-			cout << "Query index too large: " << initialMatches[i].queryIdx << ", match: " << i << endl;
-		if (initialMatches[i].trainIdx >= roomKeyPoints.size())
-			cout << "Train index too large: " << initialMatches[i].trainIdx << ", match: " << i << endl;
 	}
-	cout << "Final matches: " << matches.size() << endl;
 }
 
 

@@ -43,6 +43,9 @@ private:
 	std::vector<cv::KeyPoint> roomKeyPoints;
 	std::vector<cv::KeyPoint> deviceKeyPoints;
 	std::vector<cv::Point3f> roomKeyLocation;
+	std::vector<cv::Point2f> alignedDevicePoints;
+	std::vector<cv::Point3f> alignedWorldPoints;
+
 	std::vector<cv::DMatch> matches;
 	pcl::ModelCoefficients::Ptr coefficients;
 	boost::shared_ptr<PointCloudWrapper> pointCloudWrapper;
