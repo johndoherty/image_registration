@@ -13,11 +13,12 @@ using namespace pcl;
 
 #define FAST_THRESHOLD 40
 
-Tracker::Tracker(cv::Mat &startImage, cv::Mat &startDepth, cv::Mat &deviceCamera, boost::shared_ptr<PointCloudWrapper> wrapper) {
+Tracker::Tracker(cv::Mat &startImage, cv::Mat &startDepth, cv::Mat &deviceCamera, cv::Mat &distortion, boost::shared_ptr<PointCloudWrapper> wrapper) {
 	pointCloudWrapper = wrapper;
 	startImage.copyTo(roomImage);
 	startDepth.copyTo(roomDepth);
 	deviceCamera.copyTo(deviceCameraMatrix);
+	distortion.copyTo(distortionCoeff);
 	cvtColor(roomImage, roomBwImage, CV_RGB2GRAY);
 	extractKeyPoints(roomBwImage, roomKeyPoints);
 
@@ -79,23 +80,22 @@ bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Point3f headLocation,
 		return false;
 	}
 
-	Mat inliers;
 	cout << "Solving pnp..." << endl;
 	solvePnPRansac(
 			alignedWorldPoints,		// object points
 			alignedDevicePoints,	// image points
 			deviceCameraMatrix,		// camera matrix
-			Mat(),					// distortion coeffs
+			distortionCoeff,		// distortion coeffs
 			Rvec,					// rotation matrix
 			t,						// translation matrix
 			false,					// use initial guess
 			10000,					// interation count
-			2.0,					// inlier threshold
+			8.0,					// inlier threshold
 			100,					// number of inliers to stop
-			inliers,				// inlier indexes
-			P3P						// method
+			inlierIndexes,			// inlier indexes
+			ITERATIVE				// method
 	);
-	cout << "Number of inliers: " << inliers.size() << endl;
+	cout << "Number of inliers: " << inlierIndexes.size() << endl;
 	Rodrigues(Rvec, R);
 	return true;
 }
@@ -108,6 +108,7 @@ void Tracker::resizeDeviceImage(Mat &input, Mat &output, Size targetSize) {
 	} else {
 		targetSize.height = targetSize.width / widthOverHeight;
 	}
+	cout << "New size: " << targetSize << endl;
 	resize(input, output, targetSize);
 }
 

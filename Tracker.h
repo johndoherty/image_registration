@@ -24,7 +24,7 @@
 
 class Tracker {
 public:
-	Tracker(cv::Mat &startImage, cv::Mat &startDepth, cv::Mat &deviceCamera, boost::shared_ptr<PointCloudWrapper> wrapper);
+	Tracker(cv::Mat &startImage, cv::Mat &startDepth, cv::Mat &deviceCamera, cv::Mat &distortion, boost::shared_ptr<PointCloudWrapper> wrapper);
 	bool computePosePnP(cv::Mat &deviceImage, cv::Mat &depth, cv::Point3f headLocation, cv::Mat &R, cv::Mat &t);
 	friend class Viewer;
 
@@ -37,6 +37,7 @@ private:
 	cv::Mat roomImage;
 	cv::Mat roomBwImage;
 	cv::Mat deviceBwImage;
+	cv::Mat distortionCoeff;
 	cv::Point3f currentHeadLocation;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr roomPointCloud;
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr segmentedPointCloud;
@@ -45,6 +46,7 @@ private:
 	std::vector<cv::Point3f> roomKeyLocation;
 	std::vector<cv::Point2f> alignedDevicePoints;
 	std::vector<cv::Point3f> alignedWorldPoints;
+	std::vector<int> inlierIndexes;
 
 	std::vector<cv::DMatch> matches;
 	pcl::ModelCoefficients::Ptr coefficients;

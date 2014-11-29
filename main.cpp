@@ -19,13 +19,15 @@ using namespace cv;
 #define FRAME_BY_FRAME true
 
 Mat roomDepth, roomImage, currentDepth, currentExternalImage, deviceImage, R, t;
-Mat cameraMatrix;
+Mat cameraMatrix, distortionCoeff;
 Mat viewableRoomDepth, viewableRoomImage, viewableCurrentDepth, viewableCurrentExternalImage, viewableDeviceImage;
 Point3f headLocation;
 
 int main() {
 	float focal = 200;
-	cameraMatrix = (Mat_<float>(3, 3) << 658.46, 0, 399.5, 0, 658.46, 239.5, 0, 0, 1);
+	cameraMatrix = (Mat_<float>(3, 3) << 654.4783072499766, 0, 399.5, 0, 654.4783072499766, 239.5, 0, 0, 1);
+	distortionCoeff = (Mat_<float>(5,1) << 0.06774779384748693, -0.2183090452862961, 0, 0, -0.04145724673841295);
+	cout << cameraMatrix << endl;
 	headLocation = Point3f(0.0, 0.0, 0.0);
 
 	cout << "Initializing camera inputs..." << endl;
@@ -38,7 +40,7 @@ int main() {
 	externalVideo->getFirstDepthFrame(roomDepth);
 	externalVideo->getFirstImageFrame(roomImage);
 
-	Tracker tracker(roomImage, roomDepth, cameraMatrix, wrapper);
+	Tracker tracker(roomImage, roomDepth, cameraMatrix, distortionCoeff, wrapper);
 	cout << "Tracker initialized" << endl;
 
 	Viewer viewer(tracker);

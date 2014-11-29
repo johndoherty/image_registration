@@ -10,6 +10,8 @@
 using namespace std;
 using namespace cv;
 
+#define ONLY_INLIERS true
+
 
 void mouseEventOccured (const pcl::visualization::MouseEvent &event, void* viewer_void) {
 	boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer = *static_cast<boost::shared_ptr<pcl::visualization::PCLVisualizer> *> (viewer_void);
@@ -74,7 +76,8 @@ void Viewer::augmentImage(Mat &input, Mat &output, vector<Point2f>& keypoints, s
 		Scalar color(255, 0, 0);
 		if (i < NUMBER_OF_COLORS) {
 			color = colors[i];
-			color[0] *= 255; color[1] *= 255; color[2] *= 255;
+			float r = color[2] * 255; float g = color[1] * 255; float b = color[0] *255;
+			color[0] = r; color[1] = g; color[2] = b;
 		}
 		circle(output, keypoints[i], 7, color, 3);
 	}
@@ -102,19 +105,32 @@ void Viewer::updateDisplay(Mat R, Mat t) {
 	viewer->updateSphere(p, 0.1, 0, 255, 0, "camera");
 
 	for (int i = 0; i < numSpheres; i++) {
-		if (i < tracker->alignedWorldPoints.size()) {
+		viewer->removeShape(to_string(i));
+	}
+	numSpheres = 0;
+
+	if (ONLY_INLIERS) {
+		for (int i = 0; i < tracker->inlierIndexes.size(); i++) {
+			Scalar color(255, 0, 0);
+			if (i < NUMBER_OF_COLORS) {
+				color = colors[i];
+			}
+			Point3f point = tracker->alignedWorldPoints[tracker->inlierIndexes[i]];
+			viewer->addSphere(pcl::PointXYZ(point.x, point.y, point.z), 0.1, color[0], color[1], color[2], to_string(i), v0);
+		}
+		numSpheres = tracker->inlierIndexes.size();
+	} else {
+		for (int i = 0; i < tracker->alignedWorldPoints.size(); i++) {
 			Scalar color(255, 0, 0);
 			if (i < NUMBER_OF_COLORS) {
 				color = colors[i];
 			}
 			Point3f point = tracker->alignedWorldPoints[i];
-			viewer->updateSphere(pcl::PointXYZ(point.x, point.y, point.z), 0.1, color[0], color[1], color[2], to_string(i));
-		} else {
-			viewer->removeShape(to_string(i));
+			viewer->addSphere(pcl::PointXYZ(point.x, point.y, point.z), 0.1, color[0], color[1], color[2], to_string(i), v0);
 		}
+		numSpheres = tracker->alignedDevicePoints.size();
 	}
 
-	viewer->removeShape();
 	//viewer->loadCameraParameters("camera_params");
 	for (int i = 0; i < tracker->matches.size(); i++) {
 		/*if (tracker->matches[i].queryIdx >= tracker->deviceKeyPoints.size())
@@ -132,8 +148,19 @@ void Viewer::updateDisplay(Mat R, Mat t) {
 			tracker->matches, imageMatches, Scalar::all(-1), Scalar::all(-1),
 			vector<char>(), DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
 	//augmentImage(tracker->deviceBwImage, augmentedDeviceImage, deviceKeyPoints);
+
 	cvtColor(tracker->deviceBwImage, augmentedDeviceImage, CV_GRAY2RGB);
-	augmentImage(augmentedDeviceImage, augmentedDeviceImage, tracker->alignedDevicePoints);
+	if (ONLY_INLIERS) {
+		vector<Point2f> augmentPoints;
+		for (int i = 0; i < tracker->inlierIndexes.size(); i++) {
+			augmentPoints.push_back(tracker->alignedDevicePoints[tracker->inlierIndexes[i]]);
+		}
+		augmentImage(augmentedDeviceImage, augmentedDeviceImage, augmentPoints);
+	} else {
+		augmentImage(augmentedDeviceImage, augmentedDeviceImage, tracker->alignedDevicePoints);
+	}
+
+
 
 	imshow("Device Video", augmentedDeviceImage);
 	imshow("Matches", imageMatches);
