@@ -16,23 +16,81 @@
 using namespace std;
 using namespace cv;
 
-#define FRAME_BY_FRAME true
+#define FRAME_BY_FRAME false
+#define GL_WIN_SIZE_X 720
+#define GL_WIN_SIZE_Y 480
 
 Mat roomDepth, roomImage, currentDepth, currentExternalImage, deviceImage, R, t;
 Mat cameraMatrix, distortionCoeff;
 Mat viewableRoomDepth, viewableRoomImage, viewableCurrentDepth, viewableCurrentExternalImage, viewableDeviceImage;
+boost::shared_ptr<CVVideoInput> deviceVideo;
+boost::shared_ptr<ONIVideoInput> externalVideo;
 Point3f headLocation;
+Tracker* tracker;
+Viewer* viewer;
 
-int main() {
+
+//Called when the window is resized
+void handleResize(int w, int h) {
+	//Tell OpenGL how to convert from coordinates to pixel values
+	glViewport(0, 0, w, h);
+
+	glMatrixMode(GL_PROJECTION); //Switch to setting the camera perspective
+
+	//Set the camera perspective
+	glLoadIdentity(); //Reset the camera
+	gluPerspective(70.0,				  //The camera angle
+			(double)w / (double)h, //The width-to-height ratio
+			1.0,				   //The near z clipping coordinate
+			200.0);				//The far z clipping coordinate
+}
+
+void glutDisplay (void) {
+	if (!(deviceVideo->getNextImageFrame(deviceImage) && externalVideo->getNextDepthFrame(currentDepth) && externalVideo->getNextImageFrame(currentExternalImage))) {
+		exit(1);
+	}
+	externalVideo->getNextUserHeadLocation(headLocation);
+	tracker->computePosePnP(deviceImage, currentDepth, headLocation, R, t);
+	viewer->updateDisplay(R, t);
+	cout << R << endl;
+	cout << t << endl;
+	char pressed;
+
+	/*if (FRAME_BY_FRAME) {
+		pressed = (char)waitKey(0);
+	} else {
+		pressed = (char)waitKey(10);
+	}
+	if (pressed == 'q' || pressed == 'Q') {
+		exit(1);
+	}*/
+
+}
+
+void glutIdle (void) {
+	// Display the frame
+	glutPostRedisplay();
+}
+
+
+void glutKeyboard (unsigned char key, int /*x*/, int /*y*/) {
+	cout << "Pressed: " << key << endl;
+}
+
+
+int main(int argc, char **argv) {
 	float focal = 200;
-	cameraMatrix = (Mat_<float>(3, 3) << 654.4783072499766, 0, 399.5, 0, 654.4783072499766, 239.5, 0, 0, 1);
-	distortionCoeff = (Mat_<float>(5,1) << 0.06774779384748693, -0.2183090452862961, 0, 0, -0.04145724673841295);
+	//cameraMatrix = (Mat_<float>(3, 3) << 654.4783072499766, 0, 399.5, 0, 654.4783072499766, 239.5, 0, 0, 1);
+	cameraMatrix = (Mat_<float>(3, 3) << 460.6865232099297, 0, 399.5, 0, 460.6865232099297, 239.5, 0, 0, 1);
+	distortionCoeff = Mat();
+	//distortionCoeff = (Mat_<float>(5,1) << 0.06774779384748693, -0.2183090452862961, 0, 0, -0.04145724673841295);
+	//distortionCoeff = (Mat_<float>(5,1) << -0.3198154897068323, 0.1391814322821029, 0, 0, -0.01962299901470377);
 	cout << cameraMatrix << endl;
 	headLocation = Point3f(0.0, 0.0, 0.0);
 
 	cout << "Initializing camera inputs..." << endl;
-	boost::shared_ptr<CVVideoInput> deviceVideo = boost::shared_ptr<CVVideoInput>(new CVVideoInput("/Users/john/Dropbox/School/Research/videos/video2.mp4"));
-	boost::shared_ptr<ONIVideoInput> externalVideo = boost::shared_ptr<ONIVideoInput>(new ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 0));
+	deviceVideo = boost::shared_ptr<CVVideoInput>(new CVVideoInput("/Users/john/Dropbox/School/Research/videos/video2.mp4"));
+	externalVideo = boost::shared_ptr<ONIVideoInput>(new ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 0));
 	cout << "Camera inputs initialized" << endl;
 
 	boost::shared_ptr<PointCloudWrapper> wrapper = boost::shared_ptr<PointCloudWrapper>(new PointCloudWrapper(externalVideo));
@@ -40,29 +98,27 @@ int main() {
 	externalVideo->getFirstDepthFrame(roomDepth);
 	externalVideo->getFirstImageFrame(roomImage);
 
-	Tracker tracker(roomImage, roomDepth, cameraMatrix, distortionCoeff, wrapper);
+	tracker = new Tracker(roomImage, roomDepth, cameraMatrix, distortionCoeff, wrapper);
 	cout << "Tracker initialized" << endl;
 
-	Viewer viewer(tracker);
-
-	while (deviceVideo->getNextImageFrame(deviceImage) && externalVideo->getNextDepthFrame(currentDepth) && externalVideo->getNextImageFrame(currentExternalImage)) {
-		externalVideo->getNextUserHeadLocation(headLocation);
-		tracker.computePosePnP(deviceImage, currentDepth, headLocation, R, t);
-		viewer.updateDisplay(R, t);
-		cout << R << endl;
-		cout << t << endl;
-		char pressed;
-		if (FRAME_BY_FRAME) {
-			pressed = (char)waitKey(0);
-		} else {
-			pressed = (char)waitKey(10);
-		}
-		if (pressed == 'q' || pressed == 'Q') {
-			return 0;
-		}
-	}
+	viewer = new Viewer(*tracker);
+	cout << "Viewer initialized" << endl;
 
 
+	glutInit(&argc, argv);
+	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
+	glutInitWindowSize(GL_WIN_SIZE_X, GL_WIN_SIZE_Y);
+	glutCreateWindow("User Tracker Viewer");
+	glutReshapeFunc(handleResize);
+	glEnable(GL_DEPTH_TEST);
+
+	glutKeyboardFunc(glutKeyboard);
+	glutDisplayFunc(glutDisplay);
+	glutIdleFunc(glutIdle);
+
+	viewer->glInit();
+
+	glutMainLoop();
 
 
 	/*

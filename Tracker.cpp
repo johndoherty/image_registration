@@ -89,7 +89,7 @@ bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Point3f headLocation,
 			Rvec,					// rotation matrix
 			t,						// translation matrix
 			false,					// use initial guess
-			10000,					// interation count
+			1000,					// interation count
 			8.0,					// inlier threshold
 			100,					// number of inliers to stop
 			inlierIndexes,			// inlier indexes

@@ -11,6 +11,7 @@
 #include "Tracker.h"
 #include "pcl/visualization/cloud_viewer.h"
 #include "pcl/visualization/common/common.h"
+#include <GLUT/glut.h>
 
 #define NUMBER_OF_COLORS 100
 
@@ -18,11 +19,14 @@ class Viewer {
 public:
 	Viewer(Tracker &t);
 	void updateDisplay(cv::Mat R, cv::Mat t);
+	void glInit ();
 private:
 	int v0;
 	int v1;
 	int frame;
 	int numSpheres;
+	GLuint programID;
+	float cameraPose[16];
 	Tracker* tracker;
 	cv::Mat roomImage;
 	std::vector<cv::KeyPoint> deviceKeyPoints;
@@ -31,6 +35,7 @@ private:
 	void makeViewableDepthImage(cv::Mat &input, cv::Mat &output);
 	void augmentImage(cv::Mat &image, cv::Mat &output, std::vector<cv::KeyPoint>& keypoints, std::string text = "");
 	void augmentImage(cv::Mat &image, cv::Mat &output, std::vector<cv::Point2f>& keypoints, std::string text = "");
+	void draw();
 
 };
 
