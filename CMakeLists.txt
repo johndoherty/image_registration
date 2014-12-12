@@ -15,18 +15,20 @@ find_package(Boost 1.40 COMPONENTS program_options filesystem system REQUIRED )
 find_package(OpenNI REQUIRED)
 find_package(PCL REQUIRED)
 find_package(OPENGL REQUIRED)
-find_package(GLUT REQUIRED)
+find_package(PkgConfig REQUIRED)
+
+pkg_search_module(GLFW REQUIRED glfw3)
 
 if (MSVC)
     add_definitions("-DBOOST_ALL_NO_LIB -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -DBOOST_ALL_DYN_LINK")
 endif()
 
-include_directories(${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${OPENNI_INCLUDES} ${OPENNI2_INCLUDES} ${OPENNI_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR} ${GLUT_INCLUDE_DIR})
+include_directories(${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${OPENNI_INCLUDES} ${OPENNI2_INCLUDES} ${OPENNI_INCLUDE_DIRS} ${PCL_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR} ${GLFW_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS} ${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 add_executable (image_registration main.cpp CVVideoInput.cpp ONIVideoInput.cpp Tracker.cpp Viewer.cpp PointCloudWrapper.cpp)
-target_link_libraries(image_registration ${OpenCV_LIBS} ${Boost_LIBRARIES} ${OPENNI_LIBRARIES} ${PCL_LIBRARIES} ${OPENGL_LIBRARIES} ${GLUT_LIBRARIES})
+target_link_libraries(image_registration ${OpenCV_LIBS} ${Boost_LIBRARIES} ${OPENNI_LIBRARIES} ${PCL_LIBRARIES} ${OPENGL_LIBRARIES} ${GLFW_LIBRARIES})
 
 ### These settings help cmake work with Eclipse
 IF(CMAKE_COMPILER_IS_GNUCC)

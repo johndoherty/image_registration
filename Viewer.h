@@ -11,7 +11,9 @@
 #include "Tracker.h"
 #include "pcl/visualization/cloud_viewer.h"
 #include "pcl/visualization/common/common.h"
+#include <GLFW/glfw3.h>
 #include <GLUT/glut.h>
+#include <OpenGL/glu.h>
 
 #define NUMBER_OF_COLORS 100
 
@@ -27,6 +29,7 @@ private:
 	int numSpheres;
 	GLuint programID;
 	float cameraPose[16];
+	GLFWwindow* window;
 	Tracker* tracker;
 	cv::Mat roomImage;
 	std::vector<cv::KeyPoint> deviceKeyPoints;
