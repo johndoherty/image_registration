@@ -47,14 +47,14 @@ void Tracker::extractKeyPoints(Mat &image, vector<KeyPoint> &keyPoints) {
 			1000,	// maxCorners
 			0.03,	// quality level
 			10,		// min distance
-			5,		// block size
-			true,	// use harris
+			10,		// block size
+			false,	// use harris
 			0.04	// k
 	);
 	f.detect(image, keyPoints);
 }
 
-bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Point3f headLocation, Mat &R, Mat &t) {
+bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Point3f headLocation, Mat &R, Mat &t, bool usePrevious) {
 	Mat Rvec;
 	deviceKeyPoints.clear();
 	depth.copyTo(currentDepthImage);
@@ -88,9 +88,9 @@ bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Point3f headLocation,
 			distortionCoeff,		// distortion coeffs
 			Rvec,					// rotation matrix
 			t,						// translation matrix
-			false,					// use initial guess
+			usePrevious,			// use initial guess
 			1000,					// interation count
-			8.0,					// inlier threshold
+			10.0,					// inlier threshold
 			100,					// number of inliers to stop
 			inlierIndexes,			// inlier indexes
 			ITERATIVE				// method
@@ -139,7 +139,7 @@ void Tracker::keyPointMatches(Mat &externalImage, vector<KeyPoint> &externalKeyP
 	matches.clear();
 	cout << "Initial matches: " << initialMatches.size() << endl;
 	for(int i = 0; i < initialMatches.size(); i++) {
-		if(initialMatches[i].distance <= max(1.7*min_dist, 350.0)) {
+		if(initialMatches[i].distance <= max(1.7*min_dist, 400.0)) {
 			matches.push_back(initialMatches[i]);
 		}
 	}

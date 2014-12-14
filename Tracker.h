@@ -25,7 +25,7 @@
 class Tracker {
 public:
 	Tracker(cv::Mat &startImage, cv::Mat &startDepth, cv::Mat &deviceCamera, cv::Mat &distortion, boost::shared_ptr<PointCloudWrapper> wrapper);
-	bool computePosePnP(cv::Mat &deviceImage, cv::Mat &depth, cv::Point3f headLocation, cv::Mat &R, cv::Mat &t);
+	bool computePosePnP(cv::Mat &deviceImage, cv::Mat &depth, cv::Point3f headLocation, cv::Mat &R, cv::Mat &t, bool usePrevious=false);
 	friend class Viewer;
 
 private:

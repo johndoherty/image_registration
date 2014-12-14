@@ -16,7 +16,7 @@
 using namespace std;
 using namespace cv;
 
-#define FRAME_BY_FRAME true
+#define FRAME_BY_FRAME false
 
 Mat roomDepth, roomImage, currentDepth, currentExternalImage, deviceImage, R, t;
 Mat cameraMatrix, distortionCoeff;
@@ -25,16 +25,19 @@ Point3f headLocation;
 
 int main() {
 	float focal = 200;
-	cameraMatrix = (Mat_<float>(3, 3) << 460.6865232099297, 0, 399.5, 0, 460.6865232099297, 239.5, 0, 0, 1);
+	//cameraMatrix = (Mat_<float>(3, 3) << 200.0, 0, 399.5, 0, 200.0, 239.5, 0, 0, 1);
+	//cameraMatrix = (Mat_<float>(3, 3) << 460.6865232099297, 0, 399.5, 0, 460.6865232099297, 239.5, 0, 0, 1);
 	distortionCoeff = Mat();
-	//cameraMatrix = (Mat_<float>(3, 3) << 654.4783072499766, 0, 399.5, 0, 654.4783072499766, 239.5, 0, 0, 1);
+	cameraMatrix = (Mat_<float>(3, 3) << 654.4783072499766, 0, 399.5, 0, 654.4783072499766, 239.5, 0, 0, 1);
 	//distortionCoeff = (Mat_<float>(5,1) << 0.06774779384748693, -0.2183090452862961, 0, 0, -0.04145724673841295);
 	cout << cameraMatrix << endl;
 	headLocation = Point3f(0.0, 0.0, 0.0);
 
 	cout << "Initializing camera inputs..." << endl;
-	boost::shared_ptr<CVVideoInput> deviceVideo = boost::shared_ptr<CVVideoInput>(new CVVideoInput("/Users/john/Dropbox/School/Research/videos/video2.mp4"));
-	boost::shared_ptr<ONIVideoInput> externalVideo = boost::shared_ptr<ONIVideoInput>(new ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 0));
+	//boost::shared_ptr<CVVideoInput> deviceVideo = boost::shared_ptr<CVVideoInput>(new CVVideoInput("/Users/john/Dropbox/School/Research/videos/video2.mp4"));
+	//boost::shared_ptr<ONIVideoInput> externalVideo = boost::shared_ptr<ONIVideoInput>(new ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 0));
+	boost::shared_ptr<CVVideoInput> deviceVideo = boost::shared_ptr<CVVideoInput>(new CVVideoInput("video4.mp4", 100));
+	boost::shared_ptr<ONIVideoInput> externalVideo = boost::shared_ptr<ONIVideoInput>(new ONIVideoInput("Recording4.oni", 0));
 	cout << "Camera inputs initialized" << endl;
 
 	boost::shared_ptr<PointCloudWrapper> wrapper = boost::shared_ptr<PointCloudWrapper>(new PointCloudWrapper(externalVideo));
@@ -47,12 +50,14 @@ int main() {
 
 	Viewer viewer(tracker);
 
+	int frameCount = 0;
 	while (deviceVideo->getNextImageFrame(deviceImage) && externalVideo->getNextDepthFrame(currentDepth) && externalVideo->getNextImageFrame(currentExternalImage)) {
 		externalVideo->getNextUserHeadLocation(headLocation);
-		tracker.computePosePnP(deviceImage, currentDepth, headLocation, R, t);
+		tracker.computePosePnP(deviceImage, currentDepth, headLocation, R, t, (frameCount > 0));
 		viewer.updateDisplay(R, t);
 		cout << R << endl;
 		cout << t << endl;
+		frameCount++;
 		char pressed;
 		if (FRAME_BY_FRAME) {
 			pressed = (char)waitKey(0);
