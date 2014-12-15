@@ -25,21 +25,21 @@ Point3f headLocation;
 
 int main() {
 	float focal = 200;
-	//cameraMatrix = (Mat_<float>(3, 3) << 200.0, 0, 399.5, 0, 200.0, 239.5, 0, 0, 1);
+	cameraMatrix = (Mat_<float>(3, 3) << 300.0, 0, 200.5, 0, 300.0, 100.5, 0, 0, 1);
 	//cameraMatrix = (Mat_<float>(3, 3) << 460.6865232099297, 0, 399.5, 0, 460.6865232099297, 239.5, 0, 0, 1);
 	//cameraMatrix = (Mat_<float>(3, 3) << 460.6865232099297, 0, 320, 0, 460.6865232099297, 240, 0, 0, 1);
 	distortionCoeff = Mat();
 	//cameraMatrix = (Mat_<float>(3, 3) << 654.4783072499766, 0, 399.5, 0, 654.4783072499766, 239.5, 0, 0, 1);
-	cameraMatrix = (Mat_<float>(3, 3) << 654.4783072499766, 0, 399.5, 0, 654.4783072499766, 239.5, 0, 0, 1);
+	//cameraMatrix = (Mat_<float>(3, 3) << 654.4783072499766, 0, 399.5, 0, 654.4783072499766, 239.5, 0, 0, 1);
 	//distortionCoeff = (Mat_<float>(5,1) << 0.06774779384748693, -0.2183090452862961, 0, 0, -0.04145724673841295);
 	cout << cameraMatrix << endl;
 	headLocation = Point3f(0.0, 0.0, 0.0);
 
 	cout << "Initializing camera inputs..." << endl;
-	//boost::shared_ptr<CVVideoInput> deviceVideo = boost::shared_ptr<CVVideoInput>(new CVVideoInput("/Users/john/Dropbox/School/Research/videos/video2.mp4"));
-	//boost::shared_ptr<ONIVideoInput> externalVideo = boost::shared_ptr<ONIVideoInput>(new ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 0));
-	boost::shared_ptr<CVVideoInput> deviceVideo = boost::shared_ptr<CVVideoInput>(new CVVideoInput("video4.mp4", 0));
-	boost::shared_ptr<ONIVideoInput> externalVideo = boost::shared_ptr<ONIVideoInput>(new ONIVideoInput("Recording4.oni", 0));
+	boost::shared_ptr<CVVideoInput> deviceVideo = boost::shared_ptr<CVVideoInput>(new CVVideoInput("/Users/john/Dropbox/School/Research/videos/video2.mp4"));
+	boost::shared_ptr<ONIVideoInput> externalVideo = boost::shared_ptr<ONIVideoInput>(new ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 400));
+	//boost::shared_ptr<CVVideoInput> deviceVideo = boost::shared_ptr<CVVideoInput>(new CVVideoInput("video4.mp4", 0));
+	//boost::shared_ptr<ONIVideoInput> externalVideo = boost::shared_ptr<ONIVideoInput>(new ONIVideoInput("first_person.oni", 0));
 	cout << "Camera inputs initialized" << endl;
 
 	boost::shared_ptr<PointCloudWrapper> wrapper = boost::shared_ptr<PointCloudWrapper>(new PointCloudWrapper(externalVideo));
@@ -50,18 +50,18 @@ int main() {
 	Tracker tracker(roomImage, roomDepth, cameraMatrix, distortionCoeff, wrapper);
 	cout << "Tracker initialized" << endl;
 
-	Viewer viewer(tracker);
+	Viewer viewer(tracker, "output.mp4", deviceVideo->getCodec(), false);
 
 	int frameCount = 0;
 	while (deviceVideo->getNextImageFrame(deviceImage) && externalVideo->getNextDepthFrame(currentDepth) && externalVideo->getNextImageFrame(currentExternalImage)) {
 		externalVideo->getNextUserHeadLocation(headLocation);
-		tracker.computePosePnP(deviceImage, currentDepth, headLocation, R, t, (frameCount > 0));
+		tracker.computePosePnP(deviceImage, currentDepth, currentExternalImage, headLocation, R, t, (frameCount > 0));
 		viewer.updateDisplay(R, t);
 		cout << R << endl;
 		cout << t << endl;
 		frameCount++;
 		char pressed;
-		if (FRAME_BY_FRAME) {
+		if (FRAME_BY_FRAME || frameCount == 1) {
 			pressed = (char)waitKey(0);
 		} else {
 			pressed = (char)waitKey(10);
@@ -70,39 +70,6 @@ int main() {
 			return 0;
 		}
 	}
-
-
-
-
-	/*
-	outputVideo.open(NAME, ex, inputVideo.get(CV_CAP_PROP_FPS), S, true);
-
-	if (!outputVideo.isOpened()) {
-		cout << "Could not open the output video for write: " << source << endl;
-		return -1;
-	}
-    string::size_type pAt = filename.find_last_of('.');    // Find extension point
-	const string NAME = "results/" + destination + ".mp4"; // Form the new name with container
-
-	int ex = static_cast<int>(inputVideo.get(CV_CAP_PROP_FOURCC)); // Get Codec Type- Int form
-
-	cout << "Codec int: " << ex << endl;
-
-	// Transform from int to char via Bitwise operators
-	char EXT[] = { (char) (ex & 0XFF), (char) ((ex & 0XFF00) >> 8), (char) ((ex
-			& 0XFF0000) >> 16), (char) ((ex & 0XFF000000) >> 24), 0 };
-
-	Size S = Size((int) inputVideo.get(CV_CAP_PROP_FRAME_WIDTH), // Acquire input size
-	(int) inputVideo.get(CV_CAP_PROP_FRAME_HEIGHT));
-
-    cout << "Input frame resolution: Width=" << S.width << "  Height="
-			<< S.height << " of nr#: "
-			<< inputVideo.get(CV_CAP_PROP_FRAME_COUNT) << endl;
-	cout << "Input codec type: " << EXT << endl;
-
-
-	 */
-	//outputVideo.write(dst); //save or
 
 
 	return 0;

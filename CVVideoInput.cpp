@@ -34,4 +34,8 @@ CVVideoInput::~CVVideoInput() {
 	inputVideo.release();
 }
 
+int CVVideoInput::getCodec() {
+	return static_cast<int>(inputVideo.get(CV_CAP_PROP_FOURCC));
+}
+
 

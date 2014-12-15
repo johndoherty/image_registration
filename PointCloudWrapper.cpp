@@ -56,11 +56,11 @@ void PointCloudWrapper::segmentPointCloud(PointCloud<PointXYZRGB>::Ptr pointClou
 	// Mandatory
 	seg.setModelType(pcl::SACMODEL_PLANE);
 	seg.setMethodType(pcl::SAC_RANSAC);
-	seg.setDistanceThreshold(.05);
+	seg.setDistanceThreshold(50);
 	seg.setMaxIterations(1000);
 	pcl::ExtractIndices<pcl::PointXYZRGB> extract;
 
-	for (int i = 0; i < 5; i ++) {
+	for (int i = 0; i < 4; i ++) {
 		seg.setInputCloud(tempPointCloud);
 		seg.segment(*inliers, *coefficients);
 		if (inliers->indices.size() == 0) {
@@ -69,6 +69,13 @@ void PointCloudWrapper::segmentPointCloud(PointCloud<PointXYZRGB>::Ptr pointClou
 		}
 		for (int j = 0; j < inliers->indices.size(); j++) {
 			PointXYZRGB n = tempPointCloud->points[inliers->indices[j]];
+			/*if (i == 3) {
+				n.r = 255; n.g = 0; n.b = 0;
+			} else if (i == 0) {
+				n.r = 0; n.g = 0; n.b = 255;
+			} else {
+				n.r = 255; n.g = 255; n.b = 255;
+			}*/
 			switch (i) {
 			case 0:
 				n.r = 255; n.g = 0; n.b = 0;
@@ -97,6 +104,11 @@ void PointCloudWrapper::segmentPointCloud(PointCloud<PointXYZRGB>::Ptr pointClou
 		extract.filter(*tempPointCloud1);
 		tempPointCloud.swap (tempPointCloud1);
 	}
+	/*for (int i = 0; i < tempPointCloud->size(); i++) {
+		PointXYZRGB n = tempPointCloud->points[i];
+		n.r = 255; n.g = 255; n.b = 255;
+		segmentedPointCloud->push_back(n);
+	}*/
 }
 
 void PointCloudWrapper::depthImageCoordsToWorldCoords(Mat &depthImage, std::vector<cv::Point2f> imageCoords, std::vector<cv::Point3f> &worldCoords) {

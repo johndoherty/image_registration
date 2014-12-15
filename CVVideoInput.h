@@ -14,6 +14,7 @@ class CVVideoInput: public ImageInput {
         ~CVVideoInput();
         bool getNextImageFrame(cv::Mat &frame);
         int getCurrentFrameCount();
+        int getCodec();
     private:
         cv::VideoCapture inputVideo;
         int totalFrameCount;

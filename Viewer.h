@@ -20,7 +20,7 @@
 
 class Viewer {
 public:
-	Viewer(Tracker &t);
+	Viewer(Tracker &t, const std::string fileName="output.mp4", int codec=0, bool room=true);
 	void updateDisplay(cv::Mat R, cv::Mat t);
 private:
 	int v0;
@@ -39,6 +39,7 @@ private:
 	void augmentImage(cv::Mat &image, cv::Mat &output, std::vector<cv::KeyPoint>& keypoints, std::string text = "");
 	void augmentImage(cv::Mat &image, cv::Mat &output, std::vector<cv::Point2f>& keypoints, std::string text = "");
 	void draw(cv::Mat &R, cv::Mat &t);
+	cv::VideoWriter outputVideo;
 
 };
 

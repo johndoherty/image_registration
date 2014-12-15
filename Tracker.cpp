@@ -54,9 +54,10 @@ void Tracker::extractKeyPoints(Mat &image, vector<KeyPoint> &keyPoints) {
 	f.detect(image, keyPoints);
 }
 
-bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Point3f headLocation, Mat &R, Mat &t, bool usePrevious) {
+bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Mat &external, Point3f headLocation, Mat &R, Mat &t, bool usePrevious) {
 	Mat Rvec;
 	deviceKeyPoints.clear();
+	currentExternalImage = external;
 	depth.copyTo(currentDepthImage);
 	currentHeadLocation = Point3f(headLocation);
 	cvtColor(deviceImage, deviceBwImage, CV_RGB2GRAY);
