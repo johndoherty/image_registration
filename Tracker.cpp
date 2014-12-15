@@ -88,7 +88,7 @@ bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Point3f headLocation,
 			distortionCoeff,		// distortion coeffs
 			Rvec,					// rotation matrix
 			t,						// translation matrix
-			usePrevious,			// use initial guess
+			false,					// use initial guess
 			1000,					// interation count
 			10.0,					// inlier threshold
 			100,					// number of inliers to stop

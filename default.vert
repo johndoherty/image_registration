@@ -14,7 +14,7 @@ void main() {
     vec4 cs_position = model_view * gl_Vertex;
     distToCamera = -cs_position.z;
     gl_Position = projection * cs_position;
-    //gl_FrontColor = gl_Color;
+    gl_FrontColor = gl_Color;
     
     // Render the shape using modified position.
     //gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix *  vec4(modelPos,1);

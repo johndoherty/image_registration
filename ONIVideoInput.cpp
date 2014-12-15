@@ -261,12 +261,10 @@ void ONIVideoInput::depthImageCoordsToWorldCoords(Mat &depthImage, std::vector<c
 
 	// Convert points back for opencv
 	for (int i = 0; i < imageCoords.size(); i++) {
-		worldCoords.push_back(Point3f(worldPoints[i].X * 0.001, worldPoints[i].Y * -0.001, worldPoints[i].Z * 0.001));
+		// We need to flip because this function has a flipped coordinate system
+		worldCoords.push_back(Point3f(worldPoints[i].X, -worldPoints[i].Y, worldPoints[i].Z));
+		//worldCoords.push_back(Point3f(worldPoints[i].X, worldPoints[i].Y, worldPoints[i].Z));
 	}
-	//float z_float = ((float)z) * 0.001f;
-	/*location.x = (depthImage.x - (.5 * roomDepth.cols)) * (z_float / 200);
-	location.y = (depthImage.y - (.5 * roomDepth.rows)) * (z_float / 200);
-	location.z = z_float;*/
 }
 
 int ONIVideoInput::getCurrentFrameCount() {

@@ -31,7 +31,7 @@ void windowResized(GLFWwindow *window, int width, int height) {
 }
 
 void error_callback(int error, const char* description) {
-    cout << description << endl;
+	cout << description << endl;
 	//fputs(description, stderr);
 }
 
@@ -119,73 +119,56 @@ void Viewer::draw(Mat &R, Mat &t) {
 	}
 
 	glfwMakeContextCurrent(window);
-	//glPushAttrib(GL_ALL_ATTRIB_BITS);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUseProgram(programID);
 
-	//glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
-	//glEnable(GL_POINT_SMOOTH);
-	// Setup the OpenGL viewpoint
-	glMatrixMode(GL_MODELVIEW);
-	//glPushMatrix();
-	//glLoadIdentity();
-	//glTranslatef(0.0, -1.0, 0.0);
-	//glRotatef(35.0, 0.0, 1.0, 0.0);
-	//glTranslatef(2.0, 0.0, 0.0);
-	//glRotatef(35.0, 0.0, 0.0, 1.0);
-	//glRotatef(35.0, 1.0, 0.0, 0.0);
-	//glTranslatef(0.0, 0.0, 2.0);
-
+	// Build projectoon matrix
+	// TODO: use camera matrix for this so projection matches
 	int width; int height;
 	glfwGetFramebufferSize(window, &width, &height);
-	glm::mat4 projection = glm::perspective(45.0f, (float)width / (float)height, 0.1f, 400.0f);
-	//gluLookAt(0.0, 0.0, 0.0, 0.0, 0.0, 5.0, 0.0, -1.0, 0.0);
-	glm::mat4 view = glm::lookAt(glm::vec3(0, 0, 0), glm::vec3(0, 0, 5), glm::vec3(0, -1, 0));
-	glm::mat4 camera(R.at<double>(0, 0), R.at<double>(0, 1), R.at<double>(0, 2), t.at<double>(0),
+	glm::mat4 projection = glm::perspective(45.0f, (float)width / (float)height, 0.1f, 10000.0f);
+	/*float near = 0.1f;
+	float far = 10000.0f;
+	glm::mat4 persp = glm::mat4(654.4783072499766, 0, -399.5, 0.0,
+			0.0, 654.4783072499766, -239.5, 0.0,
+			0.0, 0.0, near + far, near * far,
+			0.0, 0.0, -1, 0.0);
+	persp = glm::transpose(persp);
+	glm::mat4 ndc = glm::ortho(0.0f, 640.0f, 480.0f, 0.0f, near, far);
+	glm::mat4 camera = persp * ndc;*/
+
+	// This is a COLUMN-WISE matrix
+	glm::mat4 pose(R.at<double>(0, 0), R.at<double>(0, 1), R.at<double>(0, 2), t.at<double>(0),
 			R.at<double>(1, 0), R.at<double>(1, 1), R.at<double>(1, 2), t.at<double>(1),
 			R.at<double>(2, 0), R.at<double>(2, 1), R.at<double>(2, 2), t.at<double>(2),
 			0.0, 0.0, 0.0, 1.0);
-	glm::mat4 model = glm::mat4(1.0f);
-	glm::mat4 modelView =  camera * view * model;
-	//glm::mat4 modelView = view * model;
-	cout << "Look at: " << endl;
-	cout << projection[0][0] << ", " << projection[0][1] << ", " << projection[0][2] << ", " << projection[0][3] << endl;
-	cout << projection[1][0] << ", " << projection[1][1] << ", " << projection[1][2] << ", " << projection[1][3] << endl;
-	cout << projection[2][0] << ", " << projection[2][1] << ", " << projection[2][2] << ", " << projection[2][3] << endl;
-	cout << projection[3][0] << ", " << projection[3][1] << ", " << projection[3][2] << ", " << projection[3][3] << endl;
-	//
-	//glTranslatef(t.at<double>(0), t.at<double>(1), t.at<double>(2));
-	//glMultMatrixf(cameraPose);
-	//gluLookAt(-3.0, 3.0, 4.0, 0.0, -3.0, 5.0, 0.0, -1.0, 0.0);
+	pose = glm::transpose(pose);
+
+	// This matrix rotates points from CV camera pose to GL camera pose.
+	// The difference is that in CV camera faces the +Z direction
+	glm::mat4 convertGl = glm::mat4(1.0f);
+	convertGl[2][2] = -1.0; convertGl[1][1] = -1.0;
+	glm::mat4 modelView = convertGl * pose;
+	glm::mat4 camera = projection;
 
 	GLint modelViewId = glGetUniformLocation(programID, "model_view");
 	GLint projectionId = glGetUniformLocation(programID, "projection");
 	glUniformMatrix4fv(modelViewId, 1, false, &modelView[0][0]);
-	glUniformMatrix4fv(projectionId, 1, false, &projection[0][0]);
+	glUniformMatrix4fv(projectionId, 1, false, &camera[0][0]);
 
-	glPointSize(3.0);
+	// TODO: put this into a buffer
+	glPointSize(10.0);
 	glBegin(GL_POINTS);
 	for (int i = 0; i < tracker->roomPointCloud->size(); i+=1) {
 		glColor3ub((*tracker->roomPointCloud)[i].r, (*tracker->roomPointCloud)[i].g, (*tracker->roomPointCloud)[i].b);
 		glVertex3d((*tracker->roomPointCloud)[i].x, (*tracker->roomPointCloud)[i].y, (*tracker->roomPointCloud)[i].z);
 	}
-
-	/*glPointSize(5.0);
-	for (int i =0; i < 200; i++) {
-		glColor3ub(255.0, 0.0, 255.0);
-		glVertex3d(1.0, 1.0, (float)i);
-	}*/
-
 	glEnd();
-
 	glFlush();
 
 	glfwSwapBuffers(window);
-	//glfwWaitEvents();
 	glfwPollEvents();
-	glPopMatrix();
-	//glPopAttrib();
 }
 
 
@@ -218,11 +201,11 @@ Viewer::Viewer(Tracker &t) {
 		// Create viewer
 		v0 = 0; v1 = 1;
 		viewer = boost::shared_ptr<pcl::visualization::PCLVisualizer> (new pcl::visualization::PCLVisualizer ("3D Viewer"));
-		viewer->createViewPort(0.0, 0.0, 0.5, 1.0, v0);
-		viewer->createViewPort(0.5, 0.0, 1.0, 1.0, v1);
+		//viewer->createViewPort(0.0, 0.0, 0.5, 1.0, v0);
+		//viewer->createViewPort(0.5, 0.0, 1.0, 1.0, v1);
 		viewer->addPointCloud(tracker->roomPointCloud, "Room Point Cloud", v0);
-		viewer->addPointCloud(tracker->segmentedPointCloud, "Segmented Room Point Cloud", v1);
-		viewer->addCoordinateSystem(0.1);
+		//viewer->addPointCloud(tracker->segmentedPointCloud, "Segmented Room Point Cloud", v1);
+		viewer->addCoordinateSystem(100);
 		//viewer->registerKeyboardCallback (keyboardEventOccurred, (void*)&viewer);
 		//viewer->registerMouseCallback(mouseEventOccured, (void*)&viewer);
 		viewer->loadCameraParameters("camera_params");
@@ -235,19 +218,19 @@ Viewer::Viewer(Tracker &t) {
 			}
 
 			Point3f p = tracker->roomKeyLocation[i];
-			viewer->addSphere(pcl::PointXYZ(p.x, p.y, p.z), 0.1, (double)color[0], (double)color[1], (double)color[2], to_string(i), v0);
+			viewer->addSphere(pcl::PointXYZ(p.x, p.y, p.z), 30, (double)color[0], (double)color[1], (double)color[2], to_string(i), v0);
 		}
 		numSpheres = tracker->roomKeyLocation.size();
 
 		Point3f head = tracker->currentHeadLocation;
-		viewer->addSphere(pcl::PointXYZ(head.x, head.y, head.z), 0.1, 0, 0, 255, "Head", v0);
+		//viewer->addSphere(pcl::PointXYZ(head.x, head.y, head.z), 30, 0, 0, 255, "Head", v0);
 
 		pcl::PointXYZ p(0, 0 , 0);
-		viewer->addSphere(p, 0.1, "camera");
+		viewer->addSphere(p, 30, "camera");
 
-		Point3f pointInFrontOfCamera(0, 0, 1);
+		Point3f pointInFrontOfCamera(0, 0, 500);
 		//viewer->addArrow(p, pcl::PointXYZ(pointInFrontOfCamera.x, pointInFrontOfCamera.y, pointInFrontOfCamera.z), 255, 0, 255, false, "head_direction");
-		viewer->addSphere(pcl::PointXYZ(pointInFrontOfCamera.x, pointInFrontOfCamera.y, pointInFrontOfCamera.z), 0.05, 255, 0, 255, "direction_point");
+		viewer->addSphere(pcl::PointXYZ(pointInFrontOfCamera.x, pointInFrontOfCamera.y, pointInFrontOfCamera.z), 10, 255, 0, 255, "direction_point");
 
 		cvtColor(tracker->roomBwImage, roomImage, CV_GRAY2BGR);
 		waitKey(1);
@@ -289,6 +272,7 @@ void Viewer::makeViewableDepthImage(Mat &input, Mat &output) {
 }
 
 void Viewer::updateDisplay(Mat R, Mat t) {
+	//R = -R.t();
 	Mat imageMatches, augmentedDeviceImage, viewableDepth, augmentedRoomImage;
 	Mat center = -R.t() * t;
 
@@ -303,16 +287,16 @@ void Viewer::updateDisplay(Mat R, Mat t) {
 		p.z = center.at<double>(2);
 		Point3f head = tracker->currentHeadLocation;
 		cout << "Head location: " << head << endl;
-		viewer->updateSphere(pcl::PointXYZ(head.x, head.y, head.z), 0.1, 0, 0, 255, "Head");
-		viewer->updateSphere(p, 0.1, 0, 255, 0, "camera");
+		//viewer->updateSphere(pcl::PointXYZ(head.x, head.y, head.z), 30, 0, 0, 255, "Head");
+		viewer->updateSphere(p, 30, 0, 255, 0, "camera");
 
-		Mat pointInFrontOfCamera = (Mat_<double>(3,1) << 0, 0, 0.4);
+		Mat pointInFrontOfCamera = (Mat_<double>(3,1) << 0, 0, 500);
 		Mat output = R.t() * pointInFrontOfCamera;
 		output = output + center;
 		cout << "New point in front of camera: " << output << endl;
 		viewer->removeShape("head_direction");
 		//viewer->addArrow(pcl::PointXYZ(output.at<double>(0), output.at<double>(1), output.at<double>(2)), p, 255, 0, 0, false, "direction");
-		viewer->updateSphere(pcl::PointXYZ(output.at<double>(0), output.at<double>(1), output.at<double>(2)), 0.05, 255, 0, 255, "direction_point");
+		viewer->updateSphere(pcl::PointXYZ(output.at<double>(0), output.at<double>(1), output.at<double>(2)), 30, 255, 0, 255, "direction_point");
 
 		//trans.col(3) = t;
 		//cout << trans << endl;
@@ -333,7 +317,7 @@ void Viewer::updateDisplay(Mat R, Mat t) {
 					color = colors[i];
 				}
 				Point3f point = tracker->alignedWorldPoints[tracker->inlierIndexes[i]];
-				viewer->addSphere(pcl::PointXYZ(point.x, point.y, point.z), 0.1, color[0], color[1], color[2], to_string(i), v0);
+				viewer->addSphere(pcl::PointXYZ(point.x, point.y, point.z), 30, color[0], color[1], color[2], to_string(i), v0);
 			}
 			numSpheres = tracker->inlierIndexes.size();
 		} else {
@@ -343,7 +327,7 @@ void Viewer::updateDisplay(Mat R, Mat t) {
 					color = colors[i];
 				}
 				Point3f point = tracker->alignedWorldPoints[i];
-				viewer->addSphere(pcl::PointXYZ(point.x, point.y, point.z), 0.1, color[0], color[1], color[2], to_string(i), v0);
+				viewer->addSphere(pcl::PointXYZ(point.x, point.y, point.z), 30, color[0], color[1], color[2], to_string(i), v0);
 			}
 			numSpheres = tracker->alignedDevicePoints.size();
 		}
