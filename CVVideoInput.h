@@ -11,7 +11,7 @@
 class CVVideoInput: public ImageInput {
     public:
         CVVideoInput(std::string filename, int startFrame = 0);
-        ~CVVideoInput();
+        virtual ~CVVideoInput();
         bool getNextImageFrame(cv::Mat &frame);
         int getCurrentFrameCount();
         int getCodec();

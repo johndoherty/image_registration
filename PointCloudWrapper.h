@@ -1,6 +1,10 @@
 /*
  * PointCloudWrapper.h
  *
+ * This class is meant to make it easier to communicate between conversion between
+ * depth images and 3D points using OpenNi, and then accessing those points as a
+ * PCL point cloud.
+ *
  *  Created on: Nov 28, 2014
  *      Author: john
  */

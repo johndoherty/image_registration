@@ -41,8 +41,8 @@ void Tracker::buildRoomKeyLocations() {
 	pointCloudWrapper->depthImageCoordsToWorldCoords(roomDepth, imageCoords, roomKeyLocation);
 }
 
+// Extract keypoints
 void Tracker::extractKeyPoints(Mat &image, vector<KeyPoint> &keyPoints) {
-	//FastFeatureDetector f = FastFeatureDetector(FAST_THRESHOLD);
 	GoodFeaturesToTrackDetector f(
 			1000,	// maxCorners
 			0.03,	// quality level
@@ -54,6 +54,7 @@ void Tracker::extractKeyPoints(Mat &image, vector<KeyPoint> &keyPoints) {
 	f.detect(image, keyPoints);
 }
 
+// Key pose computation. Find translation and rotation between two cameras using PnP
 bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Mat &external, Point3f headLocation, Mat &R, Mat &t, bool usePrevious) {
 	Mat Rvec;
 	deviceKeyPoints.clear();
@@ -113,20 +114,17 @@ void Tracker::resizeDeviceImage(Mat &input, Mat &output, Size targetSize) {
 	resize(input, output, targetSize);
 }
 
+// Extract keypoint descriptors for the keypoints detected in the two images.
+// Match keypoints using brute force matching.
 void Tracker::keyPointMatches(Mat &externalImage, vector<KeyPoint> &externalKeyPoints, Mat &deviceImage, vector<KeyPoint> &deviceKeyPoints, vector<DMatch> &matches1) {
-	//SurfDescriptorExtractor extractor;
 	SiftDescriptorExtractor extractor;
 	vector<DMatch> initialMatches;
 	Mat trainDescriptors, queryDescriptors;
 	extractor.compute(externalImage, externalKeyPoints, trainDescriptors);
 	extractor.compute(deviceImage, deviceKeyPoints, queryDescriptors);
 	BFMatcher matcher;
-	//FlannBasedMatcher matcher;
 	initialMatches.clear();
-	//matches1.reserve(queryDescriptors.rows);
-	//matches1.clear();
 	initialMatches.reserve(queryDescriptors.rows);
-	//matcher.knnMatch(descriptors1, descriptors2, initialMatches, 2);
 	matcher.match(queryDescriptors, trainDescriptors, initialMatches);
 	//return;
 	double max_dist = 0; double min_dist = 1000;

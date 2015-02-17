@@ -15,6 +15,7 @@ PointCloudWrapper::PointCloudWrapper(boost::shared_ptr<DepthInput> input) {
 	depthInput = input;
 }
 
+// Return a point cloud given a depth image
 void PointCloudWrapper::pointCloudForDepthImage(Mat &depthImage, Mat &image, PointCloud<PointXYZRGB>::Ptr pointCloud) {
 	float minX, minY, minZ = 100;
 	float maxX, maxY, maxZ = 0;
@@ -44,6 +45,7 @@ void PointCloudWrapper::pointCloudForDepthImage(Mat &depthImage, Mat &image, Poi
 
 }
 
+// A helper function to segment the point cloud and color points appropriatly.
 void PointCloudWrapper::segmentPointCloud(PointCloud<PointXYZRGB>::Ptr pointCloud, PointCloud<PointXYZRGB>::Ptr segmentedPointCloud) {
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr tempPointCloud(new pcl::PointCloud<pcl::PointXYZRGB>(*pointCloud));
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr tempPointCloud1(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -69,13 +71,6 @@ void PointCloudWrapper::segmentPointCloud(PointCloud<PointXYZRGB>::Ptr pointClou
 		}
 		for (int j = 0; j < inliers->indices.size(); j++) {
 			PointXYZRGB n = tempPointCloud->points[inliers->indices[j]];
-			/*if (i == 3) {
-				n.r = 255; n.g = 0; n.b = 0;
-			} else if (i == 0) {
-				n.r = 0; n.g = 0; n.b = 255;
-			} else {
-				n.r = 255; n.g = 255; n.b = 255;
-			}*/
 			switch (i) {
 			case 0:
 				n.r = 255; n.g = 0; n.b = 0;
@@ -104,18 +99,14 @@ void PointCloudWrapper::segmentPointCloud(PointCloud<PointXYZRGB>::Ptr pointClou
 		extract.filter(*tempPointCloud1);
 		tempPointCloud.swap (tempPointCloud1);
 	}
-	/*for (int i = 0; i < tempPointCloud->size(); i++) {
-		PointXYZRGB n = tempPointCloud->points[i];
-		n.r = 255; n.g = 255; n.b = 255;
-		segmentedPointCloud->push_back(n);
-	}*/
 }
+
 
 void PointCloudWrapper::depthImageCoordsToWorldCoords(Mat &depthImage, std::vector<cv::Point2f> imageCoords, std::vector<cv::Point3f> &worldCoords) {
 	return depthInput->depthImageCoordsToWorldCoords(depthImage, imageCoords, worldCoords);
 }
 
-
+// Helper function for converting a single depth image coord into a world coord.
 Point3f PointCloudWrapper::depthImageCoordToWorldCoord(Mat &depthImage, Point2f imageCoord) {
 	vector<Point2f> imageCoords;
 	vector<Point3f> worldCoords;

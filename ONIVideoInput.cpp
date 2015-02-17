@@ -11,6 +11,7 @@ using namespace cv;
 
 #define THROW_IF_FAILED(retVal) {if (retVal != XN_STATUS_OK) {cout << xnGetStatusString(retVal); throw xnGetStatusString(retVal);}}
 
+/* OpenNI Callbacks. This is pretty hacky cause I couldn't use methods as callbacks. */
 void XN_CALLBACK_TYPE newUserCallback(xn::UserGenerator& /*generator*/, XnUserID nId, void* void_video) {
 	cout << "New user" << endl;
 	static_cast<ONIVideoInput *>(void_video)->newUser(nId);
@@ -93,7 +94,9 @@ void XN_CALLBACK_TYPE ONIVideoInput::calibrationComplete(XnUserID nId, XnCalibra
 	}
 }
 
+// Read an ONI file with given path and seek to startFrame
 ONIVideoInput::ONIVideoInput(std::string filename, int startFrame) {
+	// Initialize OpenNI
 	supportsUserTracking = true;
 	needPose = false;
 	strcpy(strPose, "");
@@ -149,17 +152,14 @@ ONIVideoInput::ONIVideoInput(std::string filename, int startFrame) {
 		THROW_IF_FAILED(userGen.GetPoseDetectionCap().RegisterToPoseDetected(poseDetectedCallback, (void*)this, hPoseDetected));
 		userGen.GetSkeletonCap().GetCalibrationPose(strPose);
 
-		//THROW_IF_FAILED(userGen.GetPoseDetectionCap().RegisterToPoseInProgress(MyPoseInProgress, NULL, hPoseInProgress));
 	}
 
 	userGen.GetSkeletonCap().SetSkeletonProfile(XN_SKEL_PROFILE_ALL);
 
-	//THROW_IF_FAILED(userGen.GetSkeletonCap().RegisterToCalibrationInProgress(MyCalibrationInProgress, NULL, hCalibrationInProgress));
-
+	// OpenNI initialized. Can start generating frames.
 	THROW_IF_FAILED(context.StartGeneratingAll());
 
 	currentFrameCount = 0;
-
 	firstImageFrame = Mat();
 	firstDepthFrame = Mat();
 	getNextImageFrame(firstImageFrame);

@@ -6,7 +6,6 @@
  */
 
 #include "Viewer.h"
-#include "normals.h"
 
 using namespace std;
 using namespace cv;

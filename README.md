@@ -4,10 +4,13 @@ Point Cloud Projection
 Given a point cloud (depth map) and image from one camera, project the point cloud
 into a devices reference frame, using the device's camera and sensors.
 
-Architecture:
-Device Camera -> Extract Key Points -> 
-External Camera -> Extract Key Points -> 
-Depth Camera ->
+
+Dependencies
+============
+
+OpenCV, PCL, Boost
+GLFW, GLM, 
+
 
 Setup project with Eclipse
 ==========================
