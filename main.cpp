@@ -36,8 +36,8 @@ int main() {
 	headLocation = Point3f(0.0, 0.0, 0.0);
 
 	cout << "Initializing camera inputs..." << endl;
-	boost::shared_ptr<CVVideoInput> deviceVideo = boost::shared_ptr<CVVideoInput>(new CVVideoInput("/Users/john/Dropbox/School/Research/videos/video2.mp4"));
-	boost::shared_ptr<ONIVideoInput> externalVideo = boost::shared_ptr<ONIVideoInput>(new ONIVideoInput("/Users/john/Dropbox/School/Research/videos/record1.oni", 400));
+	boost::shared_ptr<CVVideoInput> deviceVideo = boost::shared_ptr<CVVideoInput>(new CVVideoInput("/Users/john/Documents/Old\ School/2014\ Fall/Research/videos/video2.mp4"));
+	boost::shared_ptr<ONIVideoInput> externalVideo = boost::shared_ptr<ONIVideoInput>(new ONIVideoInput("/Users/john/Documents/Old\ School/2014\ Fall/Research/videos/record1.oni", 400));
 	//boost::shared_ptr<CVVideoInput> deviceVideo = boost::shared_ptr<CVVideoInput>(new CVVideoInput("video4.mp4", 0));
 	//boost::shared_ptr<ONIVideoInput> externalVideo = boost::shared_ptr<ONIVideoInput>(new ONIVideoInput("first_person.oni", 0));
 	//boost::shared_ptr<CVVideoInput> deviceVideo = boost::shared_ptr<CVVideoInput>(new CVVideoInput("video4.mp4", 0));

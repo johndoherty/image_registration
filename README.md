@@ -12,6 +12,7 @@ Depth Camera ->
 Setup project with Eclipse
 ==========================
 
+Based on: http://www.vtk.org/Wiki/CMake:Eclipse_UNIX_Tutorial
 - Clone repo
 - cd into the repo directory and run the following commands:
     - mkdir build
@@ -33,3 +34,4 @@ Setup project with Eclipse
             - CDT GCC Build Output Parser
             - CDT GCC Built-in Compiler Settings
 - Now rebuild the project and check the Console for any errors
+- You may have to run Project -> C/C++ Index -> Rebuild to get rid of Eclipse errors
