@@ -11,7 +11,7 @@ using namespace std;
 using namespace cv;
 
 #define ONLY_INLIERS true
-#define DEBUG false
+#define DEBUG true
 #define FEATURE_POINTS false
 
 
@@ -33,7 +33,6 @@ void windowResized(GLFWwindow *window, int width, int height) {
 
 void error_callback(int error, const char* description) {
 	cout << description << endl;
-	//fputs(description, stderr);
 }
 
 GLuint LoadShaders(const char * vertex_file_path,const char * fragment_file_path){
@@ -195,7 +194,7 @@ Viewer::Viewer(Tracker &t, const std::string fileName, int codec, bool room) {
 	glfwGetFramebufferSize(window, &width, &height);
 	windowResized(window, width, height);
 	glfwSetErrorCallback(error_callback);
-	programID = LoadShaders("default.vert", "phong.frag");
+	programID = LoadShaders("depth.vert", "depth.frag");
 	glEnable(GL_DEPTH_TEST);
 
 	if (!outputVideo.isOpened()) {

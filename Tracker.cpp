@@ -61,11 +61,14 @@ bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Mat &external, Point3
 	currentExternalImage = external;
 	depth.copyTo(currentDepthImage);
 	currentHeadLocation = Point3f(headLocation);
+
+	// Setup device image for keypoint extraction
 	cvtColor(deviceImage, deviceBwImage, CV_RGB2GRAY);
 	resizeDeviceImage(deviceBwImage, deviceBwImage, roomBwImage.size());
 	extractKeyPoints(deviceBwImage, deviceKeyPoints);
 	keyPointMatches(roomBwImage, roomKeyPoints, deviceBwImage, deviceKeyPoints, matches);
 
+	// Align 2D device points and 3D world coordinates
 	alignedDevicePoints.clear();
 	alignedWorldPoints.clear();
 
@@ -82,6 +85,7 @@ bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Mat &external, Point3
 		return false;
 	}
 
+	// Use aligned device coordinates to run the OpenCV PnP solver
 	cout << "Solving pnp..." << endl;
 	solvePnPRansac(
 			alignedWorldPoints,		// object points
@@ -102,6 +106,8 @@ bool Tracker::computePosePnP(Mat &deviceImage, Mat& depth, Mat &external, Point3
 	return true;
 }
 
+// Try to match size of the device and external image without distorting either.
+// This improves feature matching
 void Tracker::resizeDeviceImage(Mat &input, Mat &output, Size targetSize) {
 	Size inputSize = input.size();
 	float widthOverHeight = ((float)inputSize.width) / ((float)inputSize.height);

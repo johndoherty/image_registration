@@ -46,14 +46,16 @@ int main() {
 
 	boost::shared_ptr<PointCloudWrapper> wrapper = boost::shared_ptr<PointCloudWrapper>(new PointCloudWrapper(externalVideo));
 
+	// Initialize pose tracker
 	externalVideo->getFirstDepthFrame(roomDepth);
 	externalVideo->getFirstImageFrame(roomImage);
-
 	Tracker tracker(roomImage, roomDepth, cameraMatrix, distortionCoeff, wrapper);
 	cout << "Tracker initialized" << endl;
 
+	// Initialized viewer
 	Viewer viewer(tracker, "output.mp4", deviceVideo->getCodec(), false);
 
+	// Iterate through frames in the two videos
 	int frameCount = 0;
 	while (deviceVideo->getNextImageFrame(deviceImage) && externalVideo->getNextDepthFrame(currentDepth) && externalVideo->getNextImageFrame(currentExternalImage)) {
 		externalVideo->getNextUserHeadLocation(headLocation);
