@@ -8,18 +8,18 @@ into a devices reference frame, using the device's camera and sensors.
 Dependencies
 ------------
 
-Required: OpenCV, PCL, OpenNI, Boost
-Visualization: GLFW, GLM, OpenGL
-Build: CMake
+Required: OpenCV, PCL, OpenNI, Boost  
+Visualization: GLFW, GLM, OpenGL  
+Build: CMake  
 
 To build the project as is, you must have all of these dependencies installed. You can
 replace Viewer.cpp and Viewer.h to reduce some of the dependencies.
 
 Building
 --------
-mkdir build
-cd build
-cmake ..
+mkdir build  
+cd build  
+cmake ..  
 
 
 Setup project with Eclipse
